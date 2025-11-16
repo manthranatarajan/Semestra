@@ -75,32 +75,7 @@ Deno.serve(async (req: Request) => {
 
     let parsedData: ParsedSyllabus;
 
-    if (geminiKey && geminiUrl) {
-      // Generic Gemini support: call the provided GEMINI_API_URL using
-      // the provided GEMINI_API_KEY. The exact request/response shape for
-      // Gemini/Google Gen AI can vary depending on how you provision access
-      // (API key vs service account / endpoint). We send the same prompt
-      // and attempt to extract JSON from the response body. If your actual
-      // endpoint requires a different payload, set `GEMINI_API_URL` to the
-      // correct endpoint and adjust `body` accordingly.
-      const geminiResponse = await fetch(geminiUrl, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${geminiKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ prompt }),
-      });
-
-      if (!geminiResponse.ok) {
-        throw new Error('Gemini API request failed');
-      }
-
-      const geminiText = await geminiResponse.text();
-      const jsonMatch = geminiText.match(/\{[\s\S]*\}/);
-      parsedData = JSON.parse(jsonMatch ? jsonMatch[0] : geminiText);
-    } else if (openaiKey) {
-      const prompt = `You are an expert at parsing college syllabuses. Extract structured information from the following syllabus text and return ONLY valid JSON with no markdown formatting or code blocks.
+    const prompt = `You are an expert at parsing college syllabuses. Extract structured information from the following syllabus text and return ONLY valid JSON with no markdown formatting or code blocks.
 
 Extract:
 1. Course name, instructor, semester
@@ -129,6 +104,32 @@ Return this exact JSON structure:
 Syllabus text:
 ${extractedText}`;
 
+    if (geminiKey && geminiUrl) {
+      const geminiResponse = await fetch(`${geminiUrl}?key=${geminiKey}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          contents: [{
+            parts: [{
+              text: prompt
+            }]
+          }]
+        }),
+      });
+
+      if (!geminiResponse.ok) {
+        const errorText = await geminiResponse.text();
+        console.error('Gemini API error:', errorText);
+        throw new Error('Gemini API request failed');
+      }
+
+      const geminiData = await geminiResponse.json();
+      const geminiText = geminiData.candidates?.[0]?.content?.parts?.[0]?.text || '';
+      const jsonMatch = geminiText.match(/\{[\s\S]*\}/);
+      parsedData = JSON.parse(jsonMatch ? jsonMatch[0] : geminiText);
+    } else if (openaiKey) {
       const openaiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
         headers: {
