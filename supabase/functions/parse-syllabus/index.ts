@@ -43,6 +43,8 @@ Deno.serve(async (req: Request) => {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseKey = Deno.env.get('SUPABASE_ANON_KEY')!;
     const openaiKey = Deno.env.get('OPENAI_API_KEY');
+    const geminiKey = Deno.env.get('GEMINI_API_KEY');
+    const geminiUrl = Deno.env.get('GEMINI_API_URL');
 
     const authHeader = req.headers.get('Authorization')!;
     const supabase = createClient(supabaseUrl, supabaseKey, {
@@ -73,7 +75,31 @@ Deno.serve(async (req: Request) => {
 
     let parsedData: ParsedSyllabus;
 
-    if (openaiKey) {
+    if (geminiKey && geminiUrl) {
+      // Generic Gemini support: call the provided GEMINI_API_URL using
+      // the provided GEMINI_API_KEY. The exact request/response shape for
+      // Gemini/Google Gen AI can vary depending on how you provision access
+      // (API key vs service account / endpoint). We send the same prompt
+      // and attempt to extract JSON from the response body. If your actual
+      // endpoint requires a different payload, set `GEMINI_API_URL` to the
+      // correct endpoint and adjust `body` accordingly.
+      const geminiResponse = await fetch(geminiUrl, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${geminiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ prompt }),
+      });
+
+      if (!geminiResponse.ok) {
+        throw new Error('Gemini API request failed');
+      }
+
+      const geminiText = await geminiResponse.text();
+      const jsonMatch = geminiText.match(/\{[\s\S]*\}/);
+      parsedData = JSON.parse(jsonMatch ? jsonMatch[0] : geminiText);
+    } else if (openaiKey) {
       const prompt = `You are an expert at parsing college syllabuses. Extract structured information from the following syllabus text and return ONLY valid JSON with no markdown formatting or code blocks.
 
 Extract:
