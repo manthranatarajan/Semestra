@@ -75,18 +75,42 @@ Deno.serve(async (req: Request) => {
 
     let parsedData: ParsedSyllabus;
 
-    const prompt = `You are an expert at parsing college syllabuses. Extract structured information from the following syllabus text and return ONLY valid JSON with no markdown formatting or code blocks.
+    const prompt = `You are an expert at parsing college syllabuses. Extract ALL structured information from the following syllabus text and return ONLY valid JSON with no markdown formatting or code blocks.
 
-Extract:
-1. Course name, instructor, semester
-2. All assignments with titles, due dates, weights, and types (homework/project/quiz)
-3. All exams with titles, dates, and weights
-4. Grade weight breakdown (as percentages summing to 1.0)
-5. Meeting times and location
-6. Important dates
+CRITICAL PARSING REQUIREMENTS:
+1. Extract EVERY assignment mentioned, including:
+   - Weekly quizzes (every week/bi-weekly quizzes)
+   - Homework assignments
+   - Projects
+   - Labs
+   - Problem sets
+   - Discussion posts
+   - Any recurring assignments
 
-For dates, use YYYY-MM-DD format. If year is ambiguous, infer from context or use 2024.
-For weights, convert percentages to decimals (e.g., 20% = 0.2).
+2. For recurring items (e.g., "Weekly Quiz every Monday"):
+   - Create individual entries for each occurrence
+   - Infer dates based on day of week and semester schedule
+   - Label clearly (e.g., "Quiz 1", "Quiz 2", etc.)
+
+3. Parse ALL types of assessments:
+   - Quizzes (in-class, online, weekly)
+   - Homework/Problem Sets
+   - Projects
+   - Labs
+   - Exams (midterms, finals, practicals)
+   - Presentations
+   - Papers
+
+4. Extract precise information:
+   - Course name, instructor, semester
+   - Meeting times and location
+   - ALL due dates and exam dates
+   - Individual weights for each item
+   - Category weights (Exams: X%, Homework: Y%, Quizzes: Z%)
+
+For dates: Use YYYY-MM-DD format. If year is ambiguous, infer from context or use 2024.
+For weights: Convert percentages to decimals (e.g., 20% = 0.2).
+For recurring items: Generate individual entries with sequential numbering.
 
 Return this exact JSON structure:
 {
@@ -95,7 +119,7 @@ Return this exact JSON structure:
   "semester": "",
   "assignments": [{"title": "", "dueDate": "", "weight": "", "type": ""}],
   "exams": [{"title": "", "date": "", "weight": ""}],
-  "gradeWeights": {"Exams": 0.4, "Homework": 0.2},
+  "gradeWeights": {"Exams": 0.4, "Homework": 0.2, "Quizzes": 0.1},
   "meetingTimes": "",
   "location": "",
   "importantDates": [{"event": "", "date": ""}]
@@ -232,57 +256,76 @@ ${extractedText}`;
 
 function fallbackParse(text: string): ParsedSyllabus {
   const lines = text.split('\n').map(l => l.trim()).filter(l => l);
-  
-  const courseName = lines.find(l => 
+
+  const courseName = lines.find(l =>
     l.match(/course|class|subject/i) && !l.match(/schedule|policy/i)
   ) || 'Untitled Course';
-  
+
   const instructor = lines.find(l => l.match(/instructor|professor|teacher/i)) || '';
   const semester = lines.find(l => l.match(/fall|spring|summer|winter|semester/i)) || '';
-  
+
   const assignments: ParsedSyllabus['assignments'] = [];
   const exams: ParsedSyllabus['exams'] = [];
   const importantDates: ParsedSyllabus['importantDates'] = [];
-  
-  const datePattern = /\b(\d{1,2})\/(\d{1,2})\b|\b(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\w*\s+(\d{1,2})\b/i;
-  const weightPattern = /(\d+)%/;
-  
+
+  const datePattern = /\b(\d{1,2})\/(\d{1,2})(?:\/(\d{2,4}))?\b|\b(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\w*\s+(\d{1,2})(?:,?\s+(\d{4}))?\b/i;
+  const weightPattern = /(\d+(?:\.\d+)?)%/;
+
   for (const line of lines) {
     const dateMatch = line.match(datePattern);
     const weightMatch = line.match(weightPattern);
-    
-    if (line.match(/homework|hw|assignment|project|dp/i) && dateMatch) {
+    const lowerLine = line.toLowerCase();
+
+    if (lowerLine.match(/quiz(?:zes)?|quizz/i) && dateMatch) {
       assignments.push({
-        title: line.substring(0, 50),
+        title: line.substring(0, 50).trim(),
         dueDate: dateMatch[0],
-        weight: weightMatch ? (parseInt(weightMatch[1]) / 100).toString() : '0.05',
-        type: line.match(/project|dp/i) ? 'project' : 'homework',
+        weight: weightMatch ? (parseFloat(weightMatch[1]) / 100).toString() : '0.02',
+        type: 'quiz',
       });
-    } else if (line.match(/exam|midterm|final|test|quiz/i) && dateMatch) {
+    } else if (lowerLine.match(/homework|hw\s|assignment|problem\s+set|ps\d|project|lab|dp/i) && dateMatch) {
+      const type = lowerLine.match(/project|dp/i) ? 'project' :
+                   lowerLine.match(/lab/i) ? 'lab' :
+                   lowerLine.match(/problem\s+set|ps\d/i) ? 'problem set' : 'homework';
+      assignments.push({
+        title: line.substring(0, 50).trim(),
+        dueDate: dateMatch[0],
+        weight: weightMatch ? (parseFloat(weightMatch[1]) / 100).toString() : '0.05',
+        type,
+      });
+    } else if (lowerLine.match(/exam|midterm|final|test/i) && dateMatch) {
       exams.push({
-        title: line.substring(0, 50),
+        title: line.substring(0, 50).trim(),
         date: dateMatch[0],
-        weight: weightMatch ? (parseInt(weightMatch[1]) / 100).toString() : '0.2',
+        weight: weightMatch ? (parseFloat(weightMatch[1]) / 100).toString() : '0.2',
       });
-    } else if (dateMatch && line.match(/due|deadline|submit/i)) {
+    } else if (dateMatch && lowerLine.match(/due|deadline|submit/i)) {
       importantDates.push({
-        event: line.substring(0, 50),
+        event: line.substring(0, 50).trim(),
         date: dateMatch[0],
       });
     }
   }
-  
+
+  const hasQuizzes = assignments.some(a => a.type === 'quiz');
+  const gradeWeights: Record<string, number> = hasQuizzes ? {
+    'Assignments': 0.3,
+    'Quizzes': 0.2,
+    'Exams': 0.4,
+    'Participation': 0.1,
+  } : {
+    'Assignments': 0.3,
+    'Exams': 0.5,
+    'Participation': 0.2,
+  };
+
   return {
     courseName: courseName.substring(0, 100),
     instructor: instructor.substring(0, 100),
     semester: semester.substring(0, 50),
     assignments,
     exams,
-    gradeWeights: {
-      'Assignments': 0.3,
-      'Exams': 0.5,
-      'Participation': 0.2,
-    },
+    gradeWeights,
     meetingTimes: '',
     location: '',
     importantDates,

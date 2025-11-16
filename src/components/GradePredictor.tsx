@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { TrendingUp, TrendingDown, Minus } from 'lucide-react';
+import { TrendingUp, TrendingDown, Minus, Save, Check } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { Assignment, Exam, GradeWeight, supabase } from '../lib/supabase';
 import { Doughnut } from 'react-chartjs-2';
@@ -17,6 +17,9 @@ interface GradePredictorProps {
 export const GradePredictor = ({ assignments, exams, gradeWeights, courseId }: GradePredictorProps) => {
   const [scores, setScores] = useState<{ [key: string]: number }>({});
   const [whatIfScore, setWhatIfScore] = useState<number>(85);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
 
   useEffect(() => {
     const initialScores: { [key: string]: number } = {};
@@ -33,15 +36,33 @@ export const GradePredictor = ({ assignments, exams, gradeWeights, courseId }: G
     setScores(initialScores);
   }, [assignments, exams]);
 
-  const handleScoreChange = async (id: string, type: 'assignment' | 'exam', value: number) => {
+  const handleScoreChange = (id: string, type: 'assignment' | 'exam', value: number) => {
     const key = `${type}-${id}`;
     setScores((prev) => ({ ...prev, [key]: value }));
+    setHasUnsavedChanges(true);
+    setSaved(false);
+  };
 
+  const handleSaveScores = async () => {
+    setSaving(true);
     try {
-      const table = type === 'assignment' ? 'assignments' : 'exams';
-      await supabase.from(table).update({ score: value }).eq('id', id);
+      const updates = Object.entries(scores).map(([key, value]) => {
+        const [type, id] = key.split('-');
+        return { type, id, value };
+      });
+
+      for (const { type, id, value } of updates) {
+        const table = type === 'assignment' ? 'assignments' : 'exams';
+        await supabase.from(table).update({ score: value }).eq('id', id);
+      }
+
+      setHasUnsavedChanges(false);
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
     } catch (error) {
-      console.error('Error updating score:', error);
+      console.error('Error saving scores:', error);
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -325,6 +346,27 @@ export const GradePredictor = ({ assignments, exams, gradeWeights, courseId }: G
               </div>
             </div>
           )}
+        </div>
+
+        <div className="flex items-center justify-end gap-3 pt-4 border-t border-white/10">
+          {saved && (
+            <motion.div
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              className="flex items-center gap-2 text-green-400"
+            >
+              <Check className="w-5 h-5" />
+              <span>Scores saved!</span>
+            </motion.div>
+          )}
+          <button
+            onClick={handleSaveScores}
+            disabled={!hasUnsavedChanges || saving}
+            className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 rounded-xl font-semibold text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <Save className="w-5 h-5" />
+            {saving ? 'Saving...' : 'Save Scores'}
+          </button>
         </div>
       </motion.div>
     </div>

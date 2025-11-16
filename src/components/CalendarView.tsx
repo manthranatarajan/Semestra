@@ -1,13 +1,14 @@
-import { motion } from 'framer-motion';
-import { ChevronLeft, ChevronRight, Download } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { ChevronLeft, ChevronRight, Download, Plus, X } from 'lucide-react';
 import { useState } from 'react';
-import { Assignment, Exam } from '../lib/supabase';
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, parseISO, addMonths, subMonths } from 'date-fns';
+import { Assignment, Exam, supabase } from '../lib/supabase';
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, parseISO, addMonths, subMonths, isAfter, startOfToday } from 'date-fns';
 
 interface CalendarViewProps {
   assignments: Assignment[];
   exams: Exam[];
   colorTheme: string;
+  courseId: string;
 }
 
 type CalendarEvent = {
@@ -18,8 +19,13 @@ type CalendarEvent = {
   weight: number;
 };
 
-export const CalendarView = ({ assignments, exams, colorTheme }: CalendarViewProps) => {
+export const CalendarView = ({ assignments, exams, colorTheme, courseId }: CalendarViewProps) => {
   const [currentDate, setCurrentDate] = useState(new Date());
+  const [showAddEventModal, setShowAddEventModal] = useState(false);
+  const [newEventTitle, setNewEventTitle] = useState('');
+  const [newEventDate, setNewEventDate] = useState('');
+  const [newEventType, setNewEventType] = useState<'assignment' | 'exam'>('assignment');
+  const [saving, setSaving] = useState(false);
 
   const events: CalendarEvent[] = [
     ...assignments
@@ -53,6 +59,29 @@ export const CalendarView = ({ assignments, exams, colorTheme }: CalendarViewPro
     return events.filter((event) => isSameDay(event.date, date));
   };
 
+  const handleAddEvent = async () => {
+    if (!newEventTitle || !newEventDate) return;
+
+    setSaving(true);
+    try {
+      const table = newEventType === 'assignment' ? 'assignments' : 'exams';
+      const data = newEventType === 'assignment'
+        ? { course_id: courseId, title: newEventTitle, due_date: newEventDate, weight: 0, type: 'custom' }
+        : { course_id: courseId, title: newEventTitle, exam_date: newEventDate, weight: 0, type: 'custom' };
+
+      await supabase.from(table).insert(data);
+
+      setShowAddEventModal(false);
+      setNewEventTitle('');
+      setNewEventDate('');
+      window.location.reload();
+    } catch (error) {
+      console.error('Error adding event:', error);
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const handleExport = () => {
     const icsEvents = events.map((event) => {
       const start = format(event.date, "yyyyMMdd'T'HHmmss");
@@ -83,6 +112,17 @@ export const CalendarView = ({ assignments, exams, colorTheme }: CalendarViewPro
     URL.revokeObjectURL(url);
   };
 
+  const today = startOfToday();
+  const upcomingAssignments = assignments
+    .filter((a) => a.due_date && isAfter(parseISO(a.due_date), today))
+    .sort((a, b) => parseISO(a.due_date!).getTime() - parseISO(b.due_date!).getTime())
+    .slice(0, 5);
+
+  const upcomingExams = exams
+    .filter((e) => e.exam_date && isAfter(parseISO(e.exam_date), today))
+    .sort((a, b) => parseISO(a.exam_date!).getTime() - parseISO(b.exam_date!).getTime())
+    .slice(0, 5);
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -106,13 +146,22 @@ export const CalendarView = ({ assignments, exams, colorTheme }: CalendarViewPro
           </button>
         </div>
 
-        <button
-          onClick={handleExport}
-          className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 rounded-xl font-semibold text-white transition-all"
-        >
-          <Download className="w-5 h-5" />
-          Export to Calendar
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setShowAddEventModal(true)}
+            className="flex items-center gap-2 px-6 py-3 bg-green-600 hover:bg-green-700 rounded-xl font-semibold text-white transition-all"
+          >
+            <Plus className="w-5 h-5" />
+            Add Event
+          </button>
+          <button
+            onClick={handleExport}
+            className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 rounded-xl font-semibold text-white transition-all"
+          >
+            <Download className="w-5 h-5" />
+            Export to Calendar
+          </button>
+        </div>
       </div>
 
       <motion.div
@@ -198,10 +247,8 @@ export const CalendarView = ({ assignments, exams, colorTheme }: CalendarViewPro
         >
           <h3 className="text-xl font-bold text-white mb-4">Upcoming Assignments</h3>
           <div className="space-y-3">
-            {assignments
-              .filter((a) => a.due_date)
-              .slice(0, 5)
-              .map((assignment) => (
+            {upcomingAssignments.length > 0 ? (
+              upcomingAssignments.map((assignment) => (
                 <div
                   key={assignment.id}
                   className="flex items-center justify-between p-3 bg-blue-500/10 border border-blue-500/20 rounded-xl"
@@ -216,7 +263,10 @@ export const CalendarView = ({ assignments, exams, colorTheme }: CalendarViewPro
                     {(assignment.weight * 100).toFixed(0)}%
                   </span>
                 </div>
-              ))}
+              ))
+            ) : (
+              <p className="text-slate-400 text-sm">No upcoming assignments</p>
+            )}
           </div>
         </motion.div>
 
@@ -228,10 +278,8 @@ export const CalendarView = ({ assignments, exams, colorTheme }: CalendarViewPro
         >
           <h3 className="text-xl font-bold text-white mb-4">Upcoming Exams</h3>
           <div className="space-y-3">
-            {exams
-              .filter((e) => e.exam_date)
-              .slice(0, 5)
-              .map((exam) => (
+            {upcomingExams.length > 0 ? (
+              upcomingExams.map((exam) => (
                 <div
                   key={exam.id}
                   className="flex items-center justify-between p-3 bg-red-500/10 border border-red-500/20 rounded-xl"
@@ -246,10 +294,114 @@ export const CalendarView = ({ assignments, exams, colorTheme }: CalendarViewPro
                     {(exam.weight * 100).toFixed(0)}%
                   </span>
                 </div>
-              ))}
+              ))
+            ) : (
+              <p className="text-slate-400 text-sm">No upcoming exams</p>
+            )}
           </div>
         </motion.div>
       </div>
+
+      <AnimatePresence>
+        {showAddEventModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+            onClick={() => setShowAddEventModal(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl border border-white/10 p-8 max-w-md w-full shadow-2xl"
+            >
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-2xl font-bold text-white">Add Custom Event</h2>
+                <button
+                  onClick={() => setShowAddEventModal(false)}
+                  className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+                >
+                  <X className="w-5 h-5 text-slate-400" />
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-2">
+                    Event Title
+                  </label>
+                  <input
+                    type="text"
+                    value={newEventTitle}
+                    onChange={(e) => setNewEventTitle(e.target.value)}
+                    placeholder="e.g., Office Hours, Study Session"
+                    className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-white placeholder-slate-400"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-2">
+                    Date
+                  </label>
+                  <input
+                    type="date"
+                    value={newEventDate}
+                    onChange={(e) => setNewEventDate(e.target.value)}
+                    className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-white"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-2">
+                    Type
+                  </label>
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() => setNewEventType('assignment')}
+                      className={`flex-1 px-4 py-3 rounded-xl font-semibold transition-all ${
+                        newEventType === 'assignment'
+                          ? 'bg-blue-500 text-white'
+                          : 'bg-white/5 text-slate-300 hover:bg-white/10'
+                      }`}
+                    >
+                      Assignment
+                    </button>
+                    <button
+                      onClick={() => setNewEventType('exam')}
+                      className={`flex-1 px-4 py-3 rounded-xl font-semibold transition-all ${
+                        newEventType === 'exam'
+                          ? 'bg-red-500 text-white'
+                          : 'bg-white/5 text-slate-300 hover:bg-white/10'
+                      }`}
+                    >
+                      Exam
+                    </button>
+                  </div>
+                </div>
+
+                <div className="flex gap-3 pt-4">
+                  <button
+                    onClick={() => setShowAddEventModal(false)}
+                    className="flex-1 px-6 py-3 bg-white/5 hover:bg-white/10 rounded-xl font-semibold text-white transition-all"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleAddEvent}
+                    disabled={!newEventTitle || !newEventDate || saving}
+                    className="flex-1 px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 rounded-xl font-semibold text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {saving ? 'Adding...' : 'Add Event'}
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

@@ -1,17 +1,18 @@
-import { motion } from 'framer-motion';
-import { ArrowLeft, Calendar as CalendarIcon, TrendingUp, FileText, Clock } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { ArrowLeft, Calendar as CalendarIcon, TrendingUp, Clock, Lightbulb, Edit2, Save, X } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { Course, supabase, Assignment, Exam, GradeWeight } from '../lib/supabase';
 import { Timeline } from './Timeline';
 import { GradePredictor } from './GradePredictor';
 import { CalendarView } from './CalendarView';
+import { StudyHub } from './StudyHub';
 
 interface CourseDetailProps {
   course: Course;
   onBack: () => void;
 }
 
-type Tab = 'timeline' | 'grades' | 'calendar' | 'raw';
+type Tab = 'timeline' | 'grades' | 'calendar' | 'study';
 
 export const CourseDetail = ({ course, onBack }: CourseDetailProps) => {
   const [activeTab, setActiveTab] = useState<Tab>('timeline');
@@ -19,6 +20,14 @@ export const CourseDetail = ({ course, onBack }: CourseDetailProps) => {
   const [exams, setExams] = useState<Exam[]>([]);
   const [gradeWeights, setGradeWeights] = useState<GradeWeight[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedCourse, setEditedCourse] = useState({
+    course_name: course.course_name,
+    instructor: course.instructor,
+    semester: course.semester,
+    meeting_times: course.meeting_times,
+  });
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -46,11 +55,38 @@ export const CourseDetail = ({ course, onBack }: CourseDetailProps) => {
     fetchData();
   }, [course.id]);
 
+  const handleSaveCourse = async () => {
+    setSaving(true);
+    try {
+      await supabase
+        .from('courses')
+        .update(editedCourse)
+        .eq('id', course.id);
+
+      Object.assign(course, editedCourse);
+      setIsEditing(false);
+    } catch (error) {
+      console.error('Error saving course:', error);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setEditedCourse({
+      course_name: course.course_name,
+      instructor: course.instructor,
+      semester: course.semester,
+      meeting_times: course.meeting_times,
+    });
+    setIsEditing(false);
+  };
+
   const tabs = [
     { id: 'timeline' as Tab, label: 'Timeline', icon: Clock },
     { id: 'grades' as Tab, label: 'Grade Predictor', icon: TrendingUp },
     { id: 'calendar' as Tab, label: 'Calendar', icon: CalendarIcon },
-    { id: 'raw' as Tab, label: 'Raw Syllabus', icon: FileText },
+    { id: 'study' as Tab, label: 'Study Hub', icon: Lightbulb },
   ];
 
   return (
@@ -70,25 +106,90 @@ export const CourseDetail = ({ course, onBack }: CourseDetailProps) => {
 
             <div className="flex items-start gap-6">
               <div
-                className="w-16 h-16 rounded-2xl flex items-center justify-center text-2xl font-bold text-white"
+                className="w-16 h-16 rounded-2xl flex items-center justify-center text-2xl font-bold text-white flex-shrink-0"
                 style={{ backgroundColor: course.color_theme }}
               >
-                {course.course_name.charAt(0)}
+                {(isEditing ? editedCourse.course_name : course.course_name).charAt(0)}
               </div>
 
               <div className="flex-1">
-                <h1 className="text-3xl font-bold text-white mb-2">{course.course_name}</h1>
-                <div className="flex items-center gap-4 text-slate-300">
-                  <span>{course.instructor}</span>
-                  <span>•</span>
-                  <span>{course.semester}</span>
-                  {course.meeting_times && (
-                    <>
+                {isEditing ? (
+                  <div className="space-y-3">
+                    <input
+                      type="text"
+                      value={editedCourse.course_name}
+                      onChange={(e) => setEditedCourse({ ...editedCourse, course_name: e.target.value })}
+                      className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white text-2xl font-bold focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                    <div className="grid md:grid-cols-3 gap-3">
+                      <input
+                        type="text"
+                        value={editedCourse.instructor}
+                        onChange={(e) => setEditedCourse({ ...editedCourse, instructor: e.target.value })}
+                        placeholder="Instructor"
+                        className="px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                      <input
+                        type="text"
+                        value={editedCourse.semester}
+                        onChange={(e) => setEditedCourse({ ...editedCourse, semester: e.target.value })}
+                        placeholder="Semester"
+                        className="px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                      <input
+                        type="text"
+                        value={editedCourse.meeting_times}
+                        onChange={(e) => setEditedCourse({ ...editedCourse, meeting_times: e.target.value })}
+                        placeholder="Meeting Times"
+                        className="px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <h1 className="text-3xl font-bold text-white mb-2">{course.course_name}</h1>
+                    <div className="flex items-center gap-4 text-slate-300">
+                      <span>{course.instructor}</span>
                       <span>•</span>
-                      <span>{course.meeting_times}</span>
-                    </>
-                  )}
-                </div>
+                      <span>{course.semester}</span>
+                      {course.meeting_times && (
+                        <>
+                          <span>•</span>
+                          <span>{course.meeting_times}</span>
+                        </>
+                      )}
+                    </div>
+                  </>
+                )}
+              </div>
+
+              <div className="flex items-center gap-2">
+                {isEditing ? (
+                  <>
+                    <button
+                      onClick={handleCancelEdit}
+                      className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+                    >
+                      <X className="w-5 h-5 text-slate-400" />
+                    </button>
+                    <button
+                      onClick={handleSaveCourse}
+                      disabled={saving}
+                      className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 rounded-lg text-white transition-colors disabled:opacity-50"
+                    >
+                      <Save className="w-5 h-5" />
+                      {saving ? 'Saving...' : 'Save'}
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    onClick={() => setIsEditing(true)}
+                    className="flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 rounded-lg text-slate-300 hover:text-white transition-all"
+                  >
+                    <Edit2 className="w-5 h-5" />
+                    Edit
+                  </button>
+                )}
               </div>
             </div>
 
@@ -143,15 +244,11 @@ export const CourseDetail = ({ course, onBack }: CourseDetailProps) => {
                   assignments={assignments}
                   exams={exams}
                   colorTheme={course.color_theme}
+                  courseId={course.id}
                 />
               )}
-              {activeTab === 'raw' && (
-                <div className="bg-gradient-to-br from-white/5 to-white/10 backdrop-blur-md rounded-2xl border border-white/10 p-8">
-                  <h2 className="text-2xl font-bold text-white mb-6">Original Syllabus Text</h2>
-                  <div className="bg-black/20 rounded-xl p-6 font-mono text-sm text-slate-300 whitespace-pre-wrap max-h-[600px] overflow-y-auto">
-                    {course.raw_text || 'No raw text available'}
-                  </div>
-                </div>
+              {activeTab === 'study' && (
+                <StudyHub courseId={course.id} />
               )}
             </motion.div>
           )}
