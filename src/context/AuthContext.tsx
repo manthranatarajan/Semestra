@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { User } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
+import { testSupabaseConnection } from '../lib/connectionTest';
 
 interface AuthContextType {
   user: User | null;
@@ -17,10 +18,23 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
+    const initializeAuth = async () => {
+      const connectionResult = await testSupabaseConnection();
+
+      if (!connectionResult.success) {
+        console.warn('⚠️ Supabase connection check failed, but continuing...');
+      }
+
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        setUser(session?.user ?? null);
+        setLoading(false);
+      }).catch((error) => {
+        console.error('❌ Failed to get session:', error);
+        setLoading(false);
+      });
+    };
+
+    initializeAuth();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       (async () => {
