@@ -1,0 +1,6 @@
+{
+  "importMap": "./supabase/functions/deno.json",
+  "tasks": {},
+  "fmt": {},
+  "lint": {}
+}
