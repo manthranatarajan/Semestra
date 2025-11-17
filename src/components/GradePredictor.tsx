@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
-import { TrendingUp, TrendingDown, Minus, Save, Check } from 'lucide-react';
+import { TrendingUp, TrendingDown, Minus, Save, Check, Edit2, X } from 'lucide-react';
+import { useToast } from './Toast';
 import { useState, useEffect } from 'react';
 import { Assignment, Exam, GradeWeight, supabase } from '../lib/supabase';
 import { Doughnut } from 'react-chartjs-2';
@@ -12,14 +13,18 @@ interface GradePredictorProps {
   exams: Exam[];
   gradeWeights: GradeWeight[];
   courseId: string;
+  onRefresh: () => void;
 }
 
-export const GradePredictor = ({ assignments, exams, gradeWeights, courseId }: GradePredictorProps) => {
+export const GradePredictor = ({ assignments, exams, gradeWeights, courseId, onRefresh }: GradePredictorProps) => {
+  const { showToast } = useToast();
   const [scores, setScores] = useState<{ [key: string]: number }>({});
   const [whatIfScore, setWhatIfScore] = useState<number>(85);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [editingWeights, setEditingWeights] = useState(false);
+  const [editedWeights, setEditedWeights] = useState<{ [key: string]: number }>({});
 
   useEffect(() => {
     const initialScores: { [key: string]: number } = {};
@@ -35,6 +40,14 @@ export const GradePredictor = ({ assignments, exams, gradeWeights, courseId }: G
     });
     setScores(initialScores);
   }, [assignments, exams]);
+
+  useEffect(() => {
+    const weights: { [key: string]: number } = {};
+    gradeWeights.forEach((w) => {
+      weights[w.id] = w.weight * 100;
+    });
+    setEditedWeights(weights);
+  }, [gradeWeights]);
 
   const handleScoreChange = (id: string, type: 'assignment' | 'exam', value: number) => {
     const key = `${type}-${id}`;
@@ -58,12 +71,51 @@ export const GradePredictor = ({ assignments, exams, gradeWeights, courseId }: G
 
       setHasUnsavedChanges(false);
       setSaved(true);
+      showToast('Scores saved successfully', 'success');
       setTimeout(() => setSaved(false), 3000);
     } catch (error) {
       console.error('Error saving scores:', error);
+      showToast('Failed to save scores', 'error');
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleSaveWeights = async () => {
+    setSaving(true);
+    try {
+      const total = Object.values(editedWeights).reduce((sum, val) => sum + val, 0);
+      if (Math.abs(total - 100) > 0.1) {
+        showToast('Grade weights must sum to 100%', 'error');
+        setSaving(false);
+        return;
+      }
+
+      for (const [id, weight] of Object.entries(editedWeights)) {
+        await supabase
+          .from('grade_weights')
+          .update({ weight: weight / 100 })
+          .eq('id', id);
+      }
+
+      setEditingWeights(false);
+      await onRefresh();
+      showToast('Grade breakdown updated', 'success');
+    } catch (error) {
+      console.error('Error saving weights:', error);
+      showToast('Failed to update grade breakdown', 'error');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleCancelWeightEdit = () => {
+    const weights: { [key: string]: number } = {};
+    gradeWeights.forEach((w) => {
+      weights[w.id] = w.weight * 100;
+    });
+    setEditedWeights(weights);
+    setEditingWeights(false);
   };
 
   const calculateGrade = (useWhatIf: boolean = false) => {
@@ -202,10 +254,70 @@ export const GradePredictor = ({ assignments, exams, gradeWeights, courseId }: G
           transition={{ delay: 0.1 }}
           className="bg-gradient-to-br from-white/5 to-white/10 backdrop-blur-md rounded-2xl border border-white/10 p-8"
         >
-          <h2 className="text-2xl font-bold text-white mb-6">Grade Breakdown</h2>
-          <div className="h-64">
-            <Doughnut data={chartData} options={chartOptions} />
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-2xl font-bold text-white">Grade Breakdown</h2>
+            {editingWeights ? (
+              <div className="flex gap-2">
+                <button
+                  onClick={handleSaveWeights}
+                  disabled={saving}
+                  className="flex items-center gap-2 px-4 py-2 bg-green-500 hover:bg-green-600 rounded-lg text-white font-medium transition-colors disabled:opacity-50"
+                >
+                  <Check className="w-4 h-4" />
+                  Save
+                </button>
+                <button
+                  onClick={handleCancelWeightEdit}
+                  disabled={saving}
+                  className="flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 rounded-lg text-white font-medium transition-colors disabled:opacity-50"
+                >
+                  <X className="w-4 h-4" />
+                  Cancel
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => setEditingWeights(true)}
+                className="flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 rounded-lg text-slate-300 hover:text-white transition-all"
+              >
+                <Edit2 className="w-4 h-4" />
+                Edit
+              </button>
+            )}
           </div>
+          {editingWeights ? (
+            <div className="space-y-3">
+              {gradeWeights.map((weight) => (
+                <div key={weight.id} className="flex items-center gap-4">
+                  <label className="flex-1 text-slate-300">{weight.category}</label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="number"
+                      value={editedWeights[weight.id] || 0}
+                      onChange={(e) => setEditedWeights({ ...editedWeights, [weight.id]: parseFloat(e.target.value) || 0 })}
+                      min="0"
+                      max="100"
+                      step="0.1"
+                      className="w-20 px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white text-center focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                    <span className="text-slate-400">%</span>
+                  </div>
+                </div>
+              ))}
+              <div className="pt-3 border-t border-white/10">
+                <div className="flex items-center justify-between font-semibold">
+                  <span className="text-white">Total</span>
+                  <span className={`${Math.abs(Object.values(editedWeights).reduce((sum, val) => sum + val, 0) - 100) < 0.1 ? 'text-green-400' : 'text-red-400'}`}>
+                    {Object.values(editedWeights).reduce((sum, val) => sum + val, 0).toFixed(1)}%
+                  </span>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="h-64">
+              <Doughnut data={chartData} options={chartOptions} />
+            </div>
+          )}
         </motion.div>
       </div>
 

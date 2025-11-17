@@ -1,14 +1,17 @@
-import { motion } from 'framer-motion';
-import { Calendar, Clock, Award, CheckCircle, Edit2, Trash2, Check, X } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Calendar, Clock, Award, CheckCircle, Edit2, Trash2, Check, X, Plus } from 'lucide-react';
 import { Assignment, Exam } from '../lib/supabase';
 import { format, parseISO, isAfter } from 'date-fns';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
+import { useToast } from './Toast';
 
 interface TimelineProps {
   assignments: Assignment[];
   exams: Exam[];
   colorTheme: string;
+  courseId: string;
+  onRefresh: () => void;
 }
 
 type TimelineItem = {
@@ -21,10 +24,17 @@ type TimelineItem = {
   examType?: string;
 };
 
-export const Timeline = ({ assignments, exams, colorTheme }: TimelineProps) => {
+export const Timeline = ({ assignments, exams, colorTheme, courseId, onRefresh }: TimelineProps) => {
+  const { showToast } = useToast();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editTitle, setEditTitle] = useState('');
   const [editDate, setEditDate] = useState('');
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [addType, setAddType] = useState<'assignment' | 'exam'>('assignment');
+  const [addTitle, setAddTitle] = useState('');
+  const [addDate, setAddDate] = useState('');
+  const [addWeight, setAddWeight] = useState('10');
+  const [saving, setSaving] = useState(false);
   const [items, setItems] = useState<TimelineItem[]>(() => {
     const assignmentItems: TimelineItem[] = assignments
       .filter((a) => a.due_date)
@@ -52,6 +62,34 @@ export const Timeline = ({ assignments, exams, colorTheme }: TimelineProps) => {
       (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
     );
   });
+
+  useEffect(() => {
+    const assignmentItems: TimelineItem[] = assignments
+      .filter((a) => a.due_date)
+      .map((a) => ({
+        id: a.id,
+        title: a.title,
+        date: a.due_date!,
+        weight: a.weight,
+        type: 'assignment' as const,
+        completed: a.completed,
+      }));
+
+    const examItems: TimelineItem[] = exams
+      .filter((e) => e.exam_date)
+      .map((e) => ({
+        id: e.id,
+        title: e.title,
+        date: e.exam_date!,
+        weight: e.weight,
+        type: 'exam' as const,
+        examType: e.type,
+      }));
+
+    setItems([...assignmentItems, ...examItems].sort(
+      (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+    ));
+  }, [assignments, exams]);
 
   const toggleComplete = async (item: TimelineItem) => {
     if (item.type !== 'assignment') return;
@@ -85,6 +123,7 @@ export const Timeline = ({ assignments, exams, colorTheme }: TimelineProps) => {
     const item = items.find(i => i.id === editingId);
     if (!item) return;
 
+    setSaving(true);
     try {
       const table = item.type === 'assignment' ? 'assignments' : 'exams';
       const dateField = item.type === 'assignment' ? 'due_date' : 'exam_date';
@@ -94,15 +133,14 @@ export const Timeline = ({ assignments, exams, colorTheme }: TimelineProps) => {
         .update({ title: editTitle, [dateField]: editDate })
         .eq('id', editingId);
 
-      setItems((prev) =>
-        prev.map((i) =>
-          i.id === editingId ? { ...i, title: editTitle, date: editDate } : i
-        ).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
-      );
-
       setEditingId(null);
+      await onRefresh();
+      showToast('Changes saved successfully', 'success');
     } catch (error) {
       console.error('Error updating item:', error);
+      showToast('Failed to save changes', 'error');
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -115,6 +153,7 @@ export const Timeline = ({ assignments, exams, colorTheme }: TimelineProps) => {
   const deleteItem = async (item: TimelineItem) => {
     if (!confirm(`Are you sure you want to delete "${item.title}"?`)) return;
 
+    setSaving(true);
     try {
       const table = item.type === 'assignment' ? 'assignments' : 'exams';
 
@@ -123,9 +162,59 @@ export const Timeline = ({ assignments, exams, colorTheme }: TimelineProps) => {
         .delete()
         .eq('id', item.id);
 
-      setItems((prev) => prev.filter(i => i.id !== item.id));
+      await onRefresh();
+      showToast('Item deleted successfully', 'delete');
     } catch (error) {
       console.error('Error deleting item:', error);
+      showToast('Failed to delete item', 'error');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleAddItem = async () => {
+    if (!addTitle || !addDate || !addWeight) {
+      showToast('Please fill all fields', 'error');
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const weight = parseFloat(addWeight) / 100;
+
+      if (addType === 'assignment') {
+        await supabase.from('assignments').insert({
+          course_id: courseId,
+          title: addTitle,
+          due_date: addDate,
+          weight,
+          type: 'assignment',
+          description: '',
+          completed: false,
+        });
+      } else {
+        await supabase.from('exams').insert({
+          course_id: courseId,
+          title: addTitle,
+          exam_date: addDate,
+          weight,
+          type: 'exam',
+          location: '',
+          completed: false,
+        });
+      }
+
+      setShowAddModal(false);
+      setAddTitle('');
+      setAddDate('');
+      setAddWeight('10');
+      await onRefresh();
+      showToast('Item added successfully', 'success');
+    } catch (error) {
+      console.error('Error adding item:', error);
+      showToast('Failed to add item', 'error');
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -156,18 +245,28 @@ export const Timeline = ({ assignments, exams, colorTheme }: TimelineProps) => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold text-white">Course Timeline</h2>
-        <div className="flex items-center gap-4 text-sm">
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full bg-blue-500" />
-            <span className="text-slate-300">Assignment</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full bg-orange-500" />
-            <span className="text-slate-300">Exam</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full bg-red-500" />
-            <span className="text-slate-300">Final</span>
+        <div className="flex items-center gap-4">
+          <button
+            onClick={() => setShowAddModal(true)}
+            disabled={saving}
+            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 rounded-lg font-semibold text-white transition-all disabled:opacity-50"
+          >
+            <Plus className="w-5 h-5" />
+            Add Item
+          </button>
+          <div className="flex items-center gap-4 text-sm">
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-full bg-blue-500" />
+              <span className="text-slate-300">Assignment</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-full bg-orange-500" />
+              <span className="text-slate-300">Exam</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-full bg-red-500" />
+              <span className="text-slate-300">Final</span>
+            </div>
           </div>
         </div>
       </div>
@@ -340,6 +439,118 @@ export const Timeline = ({ assignments, exams, colorTheme }: TimelineProps) => {
           })}
         </div>
       </div>
+
+      <AnimatePresence>
+        {showAddModal && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl border border-white/10 p-6 max-w-md w-full"
+            >
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-xl font-bold text-white">Add Item to Timeline</h3>
+                <button
+                  onClick={() => setShowAddModal(false)}
+                  className="p-1 hover:bg-white/10 rounded-lg transition-colors"
+                >
+                  <X className="w-5 h-5 text-slate-400" />
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-2">
+                    Type
+                  </label>
+                  <div className="grid grid-cols-2 gap-3">
+                    <button
+                      onClick={() => setAddType('assignment')}
+                      className={`p-3 rounded-lg border-2 transition-all ${
+                        addType === 'assignment'
+                          ? 'border-blue-500 bg-blue-500/10'
+                          : 'border-white/10 bg-white/5 hover:border-white/20'
+                      }`}
+                    >
+                      <Clock className="w-6 h-6 text-blue-400 mx-auto mb-1" />
+                      <p className="text-white text-sm">Assignment</p>
+                    </button>
+                    <button
+                      onClick={() => setAddType('exam')}
+                      className={`p-3 rounded-lg border-2 transition-all ${
+                        addType === 'exam'
+                          ? 'border-orange-500 bg-orange-500/10'
+                          : 'border-white/10 bg-white/5 hover:border-white/20'
+                      }`}
+                    >
+                      <Award className="w-6 h-6 text-orange-400 mx-auto mb-1" />
+                      <p className="text-white text-sm">Exam</p>
+                    </button>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-2">
+                    Title
+                  </label>
+                  <input
+                    type="text"
+                    value={addTitle}
+                    onChange={(e) => setAddTitle(e.target.value)}
+                    placeholder="e.g., Final Project"
+                    className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white placeholder-slate-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-2">
+                    {addType === 'assignment' ? 'Due Date' : 'Exam Date'}
+                  </label>
+                  <input
+                    type="date"
+                    value={addDate}
+                    onChange={(e) => setAddDate(e.target.value)}
+                    className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-2">
+                    Weight (%)
+                  </label>
+                  <input
+                    type="number"
+                    value={addWeight}
+                    onChange={(e) => setAddWeight(e.target.value)}
+                    min="0"
+                    max="100"
+                    placeholder="10"
+                    className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white placeholder-slate-500"
+                  />
+                </div>
+              </div>
+
+              <div className="flex gap-3 mt-6">
+                <button
+                  onClick={() => setShowAddModal(false)}
+                  disabled={saving}
+                  className="flex-1 px-4 py-3 bg-white/5 hover:bg-white/10 rounded-xl font-medium text-white transition-all disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleAddItem}
+                  disabled={saving}
+                  className="flex-1 px-4 py-3 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 rounded-xl font-semibold text-white transition-all disabled:opacity-50"
+                >
+                  {saving ? 'Adding...' : 'Add Item'}
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

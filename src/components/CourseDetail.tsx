@@ -30,29 +30,29 @@ export const CourseDetail = ({ course, onBack }: CourseDetailProps) => {
   });
   const [saving, setSaving] = useState(false);
 
+  const fetchData = async () => {
+    try {
+      const [assignmentsRes, examsRes, weightsRes] = await Promise.all([
+        supabase.from('assignments').select('*').eq('course_id', course.id).order('due_date'),
+        supabase.from('exams').select('*').eq('course_id', course.id).order('exam_date'),
+        supabase.from('grade_weights').select('*').eq('course_id', course.id),
+      ]);
+
+      if (assignmentsRes.error) throw assignmentsRes.error;
+      if (examsRes.error) throw examsRes.error;
+      if (weightsRes.error) throw weightsRes.error;
+
+      setAssignments(assignmentsRes.data || []);
+      setExams(examsRes.data || []);
+      setGradeWeights(weightsRes.data || []);
+    } catch (error) {
+      console.error('Error fetching course data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [assignmentsRes, examsRes, weightsRes] = await Promise.all([
-          supabase.from('assignments').select('*').eq('course_id', course.id).order('due_date'),
-          supabase.from('exams').select('*').eq('course_id', course.id).order('exam_date'),
-          supabase.from('grade_weights').select('*').eq('course_id', course.id),
-        ]);
-
-        if (assignmentsRes.error) throw assignmentsRes.error;
-        if (examsRes.error) throw examsRes.error;
-        if (weightsRes.error) throw weightsRes.error;
-
-        setAssignments(assignmentsRes.data || []);
-        setExams(examsRes.data || []);
-        setGradeWeights(weightsRes.data || []);
-      } catch (error) {
-        console.error('Error fetching course data:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchData();
   }, [course.id]);
 
@@ -231,6 +231,8 @@ export const CourseDetail = ({ course, onBack }: CourseDetailProps) => {
                   assignments={assignments}
                   exams={exams}
                   colorTheme={course.color_theme}
+                  courseId={course.id}
+                  onRefresh={fetchData}
                 />
               )}
               {activeTab === 'grades' && (
@@ -239,6 +241,7 @@ export const CourseDetail = ({ course, onBack }: CourseDetailProps) => {
                   exams={exams}
                   gradeWeights={gradeWeights}
                   courseId={course.id}
+                  onRefresh={fetchData}
                 />
               )}
               {activeTab === 'calendar' && (

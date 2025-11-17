@@ -1,8 +1,9 @@
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Users, TrendingUp, Award, Flame, Search, UserPlus } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { supabase, UserPreferences, FriendProgress } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
+import { AddFriendModal } from './AddFriendModal';
 
 interface FriendsProgressProps {
   courseId: string;
@@ -23,6 +24,7 @@ export const FriendsProgress = ({ courseId }: FriendsProgressProps) => {
   const [friends, setFriends] = useState<FriendWithProgress[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [showAddModal, setShowAddModal] = useState(false);
 
   useEffect(() => {
     fetchFriendsProgress();
@@ -115,6 +117,13 @@ export const FriendsProgress = ({ courseId }: FriendsProgressProps) => {
           <p className="text-slate-400">See how your friends are doing in this course</p>
         </div>
         <div className="flex items-center gap-3">
+          <button
+            onClick={() => setShowAddModal(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 rounded-lg font-semibold text-white transition-all"
+          >
+            <UserPlus className="w-5 h-5" />
+            Add Friends
+          </button>
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
             <input
@@ -141,7 +150,10 @@ export const FriendsProgress = ({ courseId }: FriendsProgressProps) => {
           <p className="text-slate-400 mb-6 text-center max-w-md">
             Add friends to see their progress and motivate each other to stay on track!
           </p>
-          <button className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 rounded-xl font-semibold text-white transition-all">
+          <button
+            onClick={() => setShowAddModal(true)}
+            className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 rounded-xl font-semibold text-white transition-all"
+          >
             <UserPlus className="w-5 h-5" />
             Add Friends
           </button>
@@ -252,6 +264,15 @@ export const FriendsProgress = ({ courseId }: FriendsProgressProps) => {
           )}
         </div>
       )}
+
+      <AnimatePresence>
+        {showAddModal && (
+          <AddFriendModal onClose={() => {
+            setShowAddModal(false);
+            fetchFriendsProgress();
+          }} />
+        )}
+      </AnimatePresence>
     </div>
   );
 };
