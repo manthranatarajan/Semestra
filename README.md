@@ -1,3 +1,5 @@
+https://www.loom.com/share/11d9696f818041b18c0fe7c9b9cfb794
+
 # Smart Syllabus
 
 AI-powered syllabus parser and course management system. Upload your course syllabuses and automatically extract assignments, exams, deadlines, and grade weights.
