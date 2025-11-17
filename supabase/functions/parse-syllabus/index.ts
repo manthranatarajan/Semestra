@@ -240,7 +240,74 @@ Deno.serve(async (req: Request) => {
     let parsedData: ParsedSyllabus | null = null;
 
     if (geminiKey) {
-      const prompt = `Extract structured information from this syllabus and return ONLY valid JSON matching this exact schema. Use YYYY-MM-DD format for all dates.\n\nSchema:\n{\n  \"courseName\": \"string\",\n  \"instructor\": \"string\",\n  \"semester\": \"string\",\n  \"assignments\": [{\"title\": \"string\", \"dueDate\": \"YYYY-MM-DD or null\", \"weight\": number or null, \"type\": \"assignment|exam|quiz|project|lab\"}],\n  \"exams\": [{\"title\": \"string\", \"date\": \"YYYY-MM-DD or null\", \"weight\": number or null}],\n  \"gradeWeights\": {\"Category\": number},\n  \"meetingTimes\": \"string\",\n  \"location\": \"string\",\n  \"importantDates\": [{\"event\": \"string\", \"date\": \"YYYY-MM-DD\"}]\n}\n\nSyllabus:\n${extractedText}`;
+      const prompt = You are an expert parser trained to extract structured academic data from university course syllabuses.
+Your task is to read the following syllabus text and output ONLY a single valid JSON object that fits the exact schema below.
+
+### 🧱 RULES
+- Output **only JSON**, with no explanation, commentary, or text outside the JSON.
+- Never include Markdown formatting, code fences, or prose.
+- Be deterministic: follow the schema precisely, even if information is missing.
+- Use "null" for missing values, not empty strings.
+- Always use date format **YYYY-MM-DD** for every date field.
+- Extract *all* assignments, exams, projects, quizzes, labs, and important dates — don’t skip any even if uncertain.
+- If a deadline repeats across multiple weeks, list only the first unique instance.
+- For grade weights, ensure all numeric percentages sum approximately to 100 when possible.
+- If multiple grading categories exist (like "Design Project" or "Participation"), normalize them into a concise key (e.g., "Projects", "Participation").
+- Detect instructor names, meeting times, and semester labels explicitly.
+- The key "importantDates" should include semester-wide events like "Midterm", "Final Exam", or "Fall Break".
+
+### 🧩 SCHEMA
+{
+  "courseName": "string",
+  "instructor": "string or null",
+  "semester": "string or null",
+  "assignments": [
+    {
+      "title": "string",
+      "dueDate": "YYYY-MM-DD or null",
+      "type": "assignment|exam|quiz|project|lab",
+      "weight": "number or null"
+    }
+  ],
+  "exams": [
+    {
+      "title": "string",
+      "date": "YYYY-MM-DD or null",
+      "weight": "number or null"
+    }
+  ],
+  "gradeWeights": {
+    "Category": "number"
+  },
+  "meetingTimes": "string or null",
+  "location": "string or null",
+  "importantDates": [
+    {
+      "event": "string",
+      "date": "YYYY-MM-DD or null"
+    }
+  ]
+}
+
+### 📚 EXTRACTION HINTS
+- Assignments often appear as “HW”, “Homework”, “Project”, “DP”, “Assignment”, “Deliverable”.
+- Exams may appear as “Exam I”, “Exam II”, “Midterm”, “Final Exam”.
+- Dates can appear in many formats (8/25, Sept 10, Dec 11, 10/4/2025) — always convert them to ISO (YYYY-MM-DD).
+- Grade weights are typically listed in a section labeled “Grading Policy” or “Grading Scale”.
+- Include even small components like “Participation” or “Attendance” if percentages are given.
+- Use your best judgment to differentiate assignments (ongoing tasks) from exams (tests).
+- Preserve ordering if the syllabus is chronological (by week).
+
+### ⚠️ VALIDATION
+- Ensure JSON is strictly valid and parsable.
+- No extra keys.
+- No nested text or commentary.
+- The output must be complete and valid JSON — **parseable without modifications**.
+
+### 📄 SYLLABUS TEXT
+${extractedText}
+`;
+};
 
       try {
         const geminiResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiKey}`, {
