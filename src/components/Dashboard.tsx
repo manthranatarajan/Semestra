@@ -23,6 +23,12 @@ export const Dashboard = () => {
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [courseToDelete, setCourseToDelete] = useState<CourseWithProgress | null>(null);
   const [showProfile, setShowProfile] = useState(false);
+  const displayName =
+    userPreferences?.display_name ||
+    (user?.user_metadata?.display_name as string | undefined) ||
+    user?.email?.split('@')[0] ||
+    'User';
+  const username = userPreferences?.username || (user?.user_metadata?.username as string | undefined) || '';
 
   const fetchCourses = async () => {
     if (!user) return;
@@ -113,14 +119,14 @@ export const Dashboard = () => {
               className="flex items-center gap-3 px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-white/5 dark:hover:bg-white/10 rounded-xl transition-all group"
             >
               <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-sm font-bold">
-                {userPreferences?.display_name?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || 'U'}
+                {displayName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || 'U'}
               </div>
               <div className="hidden sm:block text-left">
                 <p className="text-sm font-medium text-slate-900 dark:text-white group-hover:text-blue-400 transition-colors">
-                  {userPreferences?.display_name || 'User'}
+                  {displayName}
                 </p>
-                {userPreferences?.username && (
-                  <p className="text-xs text-slate-600 dark:text-slate-400">@{userPreferences.username}</p>
+                {username && (
+                  <p className="text-xs text-slate-600 dark:text-slate-400">@{username}</p>
                 )}
               </div>
             </button>

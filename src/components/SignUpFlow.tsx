@@ -22,45 +22,34 @@ export const SignUpFlow = ({ email, password, onComplete }: SignUpFlowProps) => 
   const [theme, setTheme] = useState<'light' | 'dark'>('dark');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [signUpComplete, setSignUpComplete] = useState(false);
+  const [infoMessage, setInfoMessage] = useState('');
+  const [resendStatus, setResendStatus] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle');
   const { signUp, setTheme: updateTheme } = useAuth();
 
   const handleSignUp = async () => {
     setError('');
     setLoading(true);
+    setResendStatus('idle');
 
     try {
-      await signUp(email, password);
+      const profilePayload = {
+        display_name: displayName,
+        username: username || null,
+        theme,
+        share_progress: shareProgress,
+        share_courses: shareCourses,
+        school: school || null,
+        grad_year: gradYear ? parseInt(gradYear) : null,
+        major: major || null,
+      };
 
-      const { data: { user } } = await supabase.auth.getUser();
+      const { sessionPresent } = await signUp(email, password, profilePayload);
+      console.log('[Auth] Signup submitted. Awaiting email confirmation.', { sessionPresent });
 
-      if (user) {
-        const { error: prefError } = await supabase
-          .from('user_preferences')
-          .insert({
-            user_id: user.id,
-            display_name: displayName,
-            username: username || null,
-            theme,
-            share_progress: shareProgress,
-            share_courses: shareCourses,
-            school: school || null,
-            grad_year: gradYear ? parseInt(gradYear) : null,
-            major: major || null,
-          });
-
-        updateTheme(theme);
-
-        if (prefError) {
-          if (prefError.code === '23505') {
-            setError('Username already taken. Please choose another.');
-            setStep(1);
-            return;
-          }
-          throw prefError;
-        }
-      }
-
-      onComplete();
+      updateTheme(theme);
+      setSignUpComplete(true);
+      setInfoMessage('Please check your inbox to confirm your email before logging in.');
     } catch (err: any) {
       setError(err.message || 'Sign up failed');
     } finally {
@@ -68,7 +57,28 @@ export const SignUpFlow = ({ email, password, onComplete }: SignUpFlowProps) => 
     }
   };
 
+  const handleResendVerification = async () => {
+    try {
+      setResendStatus('sending');
+      const { error: resendError } = await supabase.auth.resend({
+        type: 'signup',
+        email,
+      });
+
+      if (resendError) {
+        setResendStatus('error');
+        throw resendError;
+      }
+
+      setResendStatus('sent');
+      console.log('[Auth] Verification email resent.');
+    } catch (err: any) {
+      setError(err.message || 'Failed to resend verification email');
+    }
+  };
+
   const nextStep = () => {
+    if (signUpComplete) return;
     if (step === 1 && !displayName.trim()) {
       setError('Please enter a display name');
       return;
@@ -95,24 +105,46 @@ export const SignUpFlow = ({ email, password, onComplete }: SignUpFlowProps) => 
               <div
                 key={i}
                 className={`flex-1 h-2 rounded-full transition-all ${
-                  i <= step ? 'bg-gradient-to-r from-blue-500 to-purple-600' : 'bg-white/10'
+                  signUpComplete || i <= step ? 'bg-gradient-to-r from-blue-500 to-purple-600' : 'bg-white/10'
                 }`}
               />
             ))}
           </div>
           <h2 className="text-2xl font-bold text-white mb-2">
-            {step === 1 && "Let's personalize your Semestra experience!"}
-            {step === 2 && 'Tell us about your studies'}
-            {step === 3 && 'Privacy settings'}
+            {signUpComplete && 'Check your email to confirm your account'}
+            {!signUpComplete && step === 1 && "Let's personalize your Semestra experience!"}
+            {!signUpComplete && step === 2 && 'Tell us about your studies'}
+            {!signUpComplete && step === 3 && 'Privacy settings'}
           </h2>
           <p className="text-slate-400 text-sm">
-            {step === 1 && 'Tell us a bit about yourself'}
-            {step === 2 && 'Add your school and academic information'}
-            {step === 3 && 'Control what you share with friends'}
+            {signUpComplete && 'We sent you a verification link. Confirm your email, then log in.'}
+            {!signUpComplete && step === 1 && 'Tell us a bit about yourself'}
+            {!signUpComplete && step === 2 && 'Add your school and academic information'}
+            {!signUpComplete && step === 3 && 'Control what you share with friends'}
           </p>
         </div>
 
-        <AnimatePresence mode="wait">
+        {signUpComplete ? (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="space-y-4"
+          >
+            <div className="p-4 bg-blue-500/10 border border-blue-500/20 rounded-xl text-white">
+              <p className="font-semibold">{infoMessage || 'Please check your inbox to verify your email.'}</p>
+              <p className="text-sm text-blue-200 mt-1">
+                You can close this window and log in after confirming.
+              </p>
+            </div>
+
+            <div className="space-y-3">
+              <p className="text-slate-300 text-sm">
+                Didn&apos;t receive an email? You can resend the verification link below.
+              </p>
+            </div>
+          </motion.div>
+        ) : (
+          <AnimatePresence mode="wait">
           {step === 1 && (
             <motion.div
               key="step1"
@@ -296,6 +328,7 @@ export const SignUpFlow = ({ email, password, onComplete }: SignUpFlowProps) => 
             </motion.div>
           )}
         </AnimatePresence>
+        )}
 
         {error && (
           <motion.p
@@ -307,23 +340,41 @@ export const SignUpFlow = ({ email, password, onComplete }: SignUpFlowProps) => 
           </motion.p>
         )}
 
-        <div className="flex gap-3 mt-6">
-          {step > 1 && (
+        {signUpComplete ? (
+          <div className="flex gap-3 mt-6">
             <button
-              onClick={() => setStep(step - 1)}
-              className="px-6 py-3 bg-white/5 hover:bg-white/10 rounded-xl font-medium text-white transition-all"
+              onClick={handleResendVerification}
+              disabled={resendStatus === 'sending'}
+              className="flex-1 px-6 py-3 bg-white/5 hover:bg-white/10 rounded-xl font-semibold text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Back
+              {resendStatus === 'sent' ? 'Verification sent!' : resendStatus === 'sending' ? 'Sending...' : 'Resend verification email'}
             </button>
-          )}
-          <button
-            onClick={nextStep}
-            disabled={loading}
-            className="flex-1 py-3 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 rounded-xl font-semibold text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {loading ? 'Creating account...' : step === 3 ? 'Complete Setup' : 'Continue'}
-          </button>
-        </div>
+            <button
+              onClick={onComplete}
+              className="flex-1 py-3 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 rounded-xl font-semibold text-white transition-all"
+            >
+              Back to login
+            </button>
+          </div>
+        ) : (
+          <div className="flex gap-3 mt-6">
+            {step > 1 && (
+              <button
+                onClick={() => setStep(step - 1)}
+                className="px-6 py-3 bg-white/5 hover:bg-white/10 rounded-xl font-medium text-white transition-all"
+              >
+                Back
+              </button>
+            )}
+            <button
+              onClick={nextStep}
+              disabled={loading}
+              className="flex-1 py-3 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 rounded-xl font-semibold text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {loading ? 'Creating account...' : step === 3 ? 'Complete Setup' : 'Continue'}
+            </button>
+          </div>
+        )}
       </motion.div>
     </div>
   );

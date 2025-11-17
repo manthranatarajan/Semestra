@@ -30,6 +30,7 @@ export const UploadModal = ({ onClose, onSuccess }: UploadModalProps) => {
   const handleUpload = async () => {
     if (!file || !user) return;
 
+    console.log('Uploading syllabus...', { fileName: file.name, size: file.size });
     setUploading(true);
     setProgress(10);
     setError('');
@@ -43,6 +44,15 @@ export const UploadModal = ({ onClose, onSuccess }: UploadModalProps) => {
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
       const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
+      if (!supabaseUrl || !supabaseKey) {
+        const envMessage = 'Supabase environment variables are missing. Check VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.';
+        console.error(envMessage, { supabaseUrl, supabaseKeySet: !!supabaseKey });
+        setError(envMessage);
+        setUploading(false);
+        setProgress(0);
+        return;
+      }
+
       const { data: { session } } = await (await import('../lib/supabase')).supabase.auth.getSession();
 
       if (!session) {
@@ -51,10 +61,16 @@ export const UploadModal = ({ onClose, onSuccess }: UploadModalProps) => {
 
       setProgress(50);
 
-      const response = await fetch(`${supabaseUrl}/functions/v1/parse-syllabus`, {
+      // Use the functions subdomain to avoid gateway/proxy issues
+      const functionsUrl = supabaseUrl.replace('.supabase.co', '.functions.supabase.co');
+      const requestUrl = `${functionsUrl}/parse-syllabus`;
+      console.log('Posting syllabus to edge function', { requestUrl });
+
+      const response = await fetch(requestUrl, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${session.access_token}`,
+          Authorization: `Bearer ${session.access_token}`,
+          apikey: supabaseKey,
         },
         body: formData,
       });
@@ -62,11 +78,20 @@ export const UploadModal = ({ onClose, onSuccess }: UploadModalProps) => {
       setProgress(80);
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Upload failed');
+        const text = await response.text();
+        console.error('Upload failed response', { status: response.status, body: text });
+        let message = 'Upload failed';
+        try {
+          const parsed = JSON.parse(text);
+          message = parsed.error || message;
+        } catch {
+          message = text || message;
+        }
+        throw new Error(message);
       }
 
       const result = await response.json();
+      console.log('Upload successful', result);
       setProgress(100);
       setSuccess(true);
 
@@ -75,7 +100,7 @@ export const UploadModal = ({ onClose, onSuccess }: UploadModalProps) => {
       }, 1500);
     } catch (err: any) {
       console.error('Upload error:', err);
-      setError(err.message || 'Failed to upload syllabus');
+      setError(err?.message ? `Upload failed: ${err.message}` : 'Failed to upload syllabus (network error)');
       setUploading(false);
       setProgress(0);
     }

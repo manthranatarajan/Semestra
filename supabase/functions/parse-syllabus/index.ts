@@ -4,7 +4,8 @@ import pdf from 'npm:pdf-parse@1.1.1';
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Client-Info, Apikey',
+  // include both Apikey/apikey casing to satisfy preflight checks
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Client-Info, Apikey, apikey',
 };
 
 interface ParsedAssignment {
