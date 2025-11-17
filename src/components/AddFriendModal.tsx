@@ -22,19 +22,22 @@ export const AddFriendModal = ({ onClose }: AddFriendModalProps) => {
 
     setSearching(true);
     try {
-      const searchPattern = `%${searchQuery}%`;
-
-      const { data, error } = await supabase
+      const { data: allUsers, error } = await supabase
         .from('user_preferences')
         .select('*')
-        .neq('user_id', user.id)
-        .or(`username.ilike.${searchPattern},display_name.ilike.${searchPattern}`)
-        .limit(10);
+        .neq('user_id', user.id);
 
       if (error) {
         console.error('Search error:', error);
         throw error;
       }
+
+      const searchLower = searchQuery.toLowerCase();
+      const matchingUsers = (allUsers || []).filter(u => {
+        const displayNameMatch = u.display_name?.toLowerCase().includes(searchLower);
+        const usernameMatch = u.username?.toLowerCase().includes(searchLower);
+        return displayNameMatch || usernameMatch;
+      }).slice(0, 10);
 
       const { data: existingFriendships } = await supabase
         .from('friendships')
@@ -42,7 +45,7 @@ export const AddFriendModal = ({ onClose }: AddFriendModalProps) => {
         .eq('user_id', user.id);
 
       const existingFriendIds = existingFriendships?.map(f => f.friend_id) || [];
-      const filteredResults = (data || []).filter(u => !existingFriendIds.includes(u.user_id));
+      const filteredResults = matchingUsers.filter(u => !existingFriendIds.includes(u.user_id));
 
       setSearchResults(filteredResults);
 

@@ -139,7 +139,12 @@ ${extractedText}`;
             parts: [{
               text: prompt
             }]
-          }]
+          }],
+          generationConfig: {
+            temperature: 0.1,
+            topK: 1,
+            topP: 0.8,
+          }
         }),
       });
 
@@ -163,7 +168,7 @@ ${extractedText}`;
         body: JSON.stringify({
           model: 'gpt-4-turbo-preview',
           messages: [{ role: 'user', content: prompt }],
-          temperature: 0.3,
+          temperature: 0.1,
         }),
       });
 
