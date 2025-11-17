@@ -58,6 +58,7 @@ export interface Exam {
   weight: number;
   type: string;
   location: string;
+  completed: boolean;
   score: number | null;
   created_at: string;
 }
@@ -76,4 +77,36 @@ export interface ImportantDate {
   event: string;
   date: string;
   created_at: string;
+}
+
+export interface UserPreferences {
+  id: string;
+  user_id: string;
+  display_name: string | null;
+  username: string | null;
+  theme: 'light' | 'dark';
+  share_progress: boolean;
+  share_courses: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Friendship {
+  id: string;
+  user_id: string;
+  friend_id: string;
+  status: 'pending' | 'accepted' | 'rejected';
+  created_at: string;
+}
+
+export interface FriendProgress {
+  id: string;
+  user_id: string;
+  course_id: string;
+  progress_percent: number;
+  tasks_completed: number;
+  total_tasks: number;
+  study_streak: number;
+  last_activity: string;
+  updated_at: string;
 }

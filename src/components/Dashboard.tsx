@@ -1,30 +1,53 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { BookOpen, Upload, LogOut, Plus, Calendar } from 'lucide-react';
+import { BookOpen, Upload, LogOut, Plus, Calendar, Trash2 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { supabase, Course } from '../lib/supabase';
 import { UploadModal } from './UploadModal';
 import { CourseDetail } from './CourseDetail';
+import { DeleteModal } from './DeleteModal';
+import { useToast } from './Toast';
+
+interface CourseWithProgress extends Course {
+  progress: number;
+}
 
 export const Dashboard = () => {
   const { user, signOut } = useAuth();
-  const [courses, setCourses] = useState<Course[]>([]);
+  const { showToast } = useToast();
+  const [courses, setCourses] = useState<CourseWithProgress[]>([]);
   const [loading, setLoading] = useState(true);
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [courseToDelete, setCourseToDelete] = useState<CourseWithProgress | null>(null);
 
   const fetchCourses = async () => {
     if (!user) return;
 
     try {
-      const { data, error } = await supabase
+      const { data: coursesData, error } = await supabase
         .from('courses')
         .select('*')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setCourses(data || []);
+
+      const { data: progressData } = await supabase
+        .from('friends_progress')
+        .select('course_id, progress_percent')
+        .eq('user_id', user.id);
+
+      const coursesWithProgress = (coursesData || []).map(course => {
+        const progress = progressData?.find(p => p.course_id === course.id);
+        return {
+          ...course,
+          progress: progress?.progress_percent || 0
+        };
+      });
+
+      setCourses(coursesWithProgress);
     } catch (error) {
       console.error('Error fetching courses:', error);
     } finally {
@@ -39,6 +62,30 @@ export const Dashboard = () => {
   const handleUploadSuccess = () => {
     fetchCourses();
     setShowUploadModal(false);
+    showToast('Syllabus uploaded successfully!', 'success');
+  };
+
+  const handleDeleteCourse = async () => {
+    if (!courseToDelete) return;
+
+    setDeleteLoading(true);
+    try {
+      const { error } = await supabase
+        .from('courses')
+        .delete()
+        .eq('id', courseToDelete.id);
+
+      if (error) throw error;
+
+      setCourses(courses.filter(c => c.id !== courseToDelete.id));
+      setCourseToDelete(null);
+      showToast('Course deleted successfully', 'delete');
+    } catch (error) {
+      console.error('Error deleting course:', error);
+      showToast('Failed to delete course', 'error');
+    } finally {
+      setDeleteLoading(false);
+    }
   };
 
   if (selectedCourse) {
@@ -55,7 +102,7 @@ export const Dashboard = () => {
             <div className="bg-gradient-to-br from-blue-500 to-purple-600 p-2 rounded-xl">
               <BookOpen className="w-6 h-6 text-white" />
             </div>
-            <span className="text-2xl font-bold text-white">Smart Syllabus</span>
+            <span className="text-2xl font-bold text-white">Semestra</span>
           </div>
 
           <div className="flex items-center gap-4">
@@ -124,8 +171,7 @@ export const Dashboard = () => {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.1 }}
                 whileHover={{ y: -8, scale: 1.02 }}
-                onClick={() => setSelectedCourse(course)}
-                className="group cursor-pointer"
+                className="group relative"
               >
                 <div className="relative p-6 bg-gradient-to-br from-white/5 to-white/10 backdrop-blur-md rounded-2xl border border-white/10 hover:border-white/20 transition-all shadow-lg hover:shadow-2xl">
                   <div
@@ -133,7 +179,17 @@ export const Dashboard = () => {
                     style={{ backgroundColor: course.color_theme }}
                   />
 
-                  <div className="mt-4">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setCourseToDelete(course);
+                    }}
+                    className="absolute top-4 right-4 p-2 bg-red-500/10 hover:bg-red-500/20 rounded-lg transition-all opacity-0 group-hover:opacity-100"
+                  >
+                    <Trash2 className="w-4 h-4 text-red-400" />
+                  </button>
+
+                  <div className="mt-4 cursor-pointer" onClick={() => setSelectedCourse(course)}>
                     <h3 className="text-xl font-bold text-white mb-2 group-hover:text-blue-400 transition-colors">
                       {course.course_name}
                     </h3>
@@ -142,6 +198,21 @@ export const Dashboard = () => {
                     <div className="flex items-center gap-2 text-sm text-slate-300 mb-4">
                       <Calendar className="w-4 h-4" />
                       <span>{course.semester}</span>
+                    </div>
+
+                    <div className="mb-4">
+                      <div className="flex items-center justify-between text-sm mb-2">
+                        <span className="text-slate-400">Progress</span>
+                        <span className="text-blue-400 font-semibold">{course.progress}%</span>
+                      </div>
+                      <div className="w-full h-2 bg-white/10 rounded-full overflow-hidden">
+                        <motion.div
+                          initial={{ width: 0 }}
+                          animate={{ width: `${course.progress}%` }}
+                          transition={{ duration: 1, delay: index * 0.1 + 0.3 }}
+                          className="h-full bg-gradient-to-r from-blue-500 to-purple-600 rounded-full"
+                        />
+                      </div>
                     </div>
 
                     <div className="pt-4 border-t border-white/10">
@@ -169,6 +240,14 @@ export const Dashboard = () => {
           <UploadModal
             onClose={() => setShowUploadModal(false)}
             onSuccess={handleUploadSuccess}
+          />
+        )}
+        {courseToDelete && (
+          <DeleteModal
+            courseName={courseToDelete.course_name}
+            onConfirm={handleDeleteCourse}
+            onCancel={() => setCourseToDelete(null)}
+            loading={deleteLoading}
           />
         )}
       </AnimatePresence>

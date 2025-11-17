@@ -1,18 +1,19 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, Calendar as CalendarIcon, TrendingUp, Clock, Lightbulb, Edit2, Save, X } from 'lucide-react';
+import { ArrowLeft, Calendar as CalendarIcon, TrendingUp, Clock, Lightbulb, Edit2, Save, X, Users } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { Course, supabase, Assignment, Exam, GradeWeight } from '../lib/supabase';
 import { Timeline } from './Timeline';
 import { GradePredictor } from './GradePredictor';
 import { CalendarView } from './CalendarView';
 import { StudyHub } from './StudyHub';
+import { FriendsProgress } from './FriendsProgress';
 
 interface CourseDetailProps {
   course: Course;
   onBack: () => void;
 }
 
-type Tab = 'timeline' | 'grades' | 'calendar' | 'study';
+type Tab = 'timeline' | 'grades' | 'calendar' | 'study' | 'friends';
 
 export const CourseDetail = ({ course, onBack }: CourseDetailProps) => {
   const [activeTab, setActiveTab] = useState<Tab>('timeline');
@@ -87,6 +88,7 @@ export const CourseDetail = ({ course, onBack }: CourseDetailProps) => {
     { id: 'grades' as Tab, label: 'Grade Predictor', icon: TrendingUp },
     { id: 'calendar' as Tab, label: 'Calendar', icon: CalendarIcon },
     { id: 'study' as Tab, label: 'Study Hub', icon: Lightbulb },
+    { id: 'friends' as Tab, label: 'Friends', icon: Users },
   ];
 
   return (
@@ -249,6 +251,9 @@ export const CourseDetail = ({ course, onBack }: CourseDetailProps) => {
               )}
               {activeTab === 'study' && (
                 <StudyHub courseId={course.id} />
+              )}
+              {activeTab === 'friends' && (
+                <FriendsProgress courseId={course.id} />
               )}
             </motion.div>
           )}

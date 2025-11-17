@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { Calendar, Clock, Award, CheckCircle } from 'lucide-react';
+import { Calendar, Clock, Award, CheckCircle, Edit2, Trash2, Check, X } from 'lucide-react';
 import { Assignment, Exam } from '../lib/supabase';
 import { format, parseISO, isAfter } from 'date-fns';
 import { useState } from 'react';
@@ -22,6 +22,9 @@ type TimelineItem = {
 };
 
 export const Timeline = ({ assignments, exams, colorTheme }: TimelineProps) => {
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editTitle, setEditTitle] = useState('');
+  const [editDate, setEditDate] = useState('');
   const [items, setItems] = useState<TimelineItem[]>(() => {
     const assignmentItems: TimelineItem[] = assignments
       .filter((a) => a.due_date)
@@ -67,6 +70,62 @@ export const Timeline = ({ assignments, exams, colorTheme }: TimelineProps) => {
       );
     } catch (error) {
       console.error('Error updating assignment:', error);
+    }
+  };
+
+  const startEditing = (item: TimelineItem) => {
+    setEditingId(item.id);
+    setEditTitle(item.title);
+    setEditDate(item.date);
+  };
+
+  const saveEdit = async () => {
+    if (!editingId) return;
+
+    const item = items.find(i => i.id === editingId);
+    if (!item) return;
+
+    try {
+      const table = item.type === 'assignment' ? 'assignments' : 'exams';
+      const dateField = item.type === 'assignment' ? 'due_date' : 'exam_date';
+
+      await supabase
+        .from(table)
+        .update({ title: editTitle, [dateField]: editDate })
+        .eq('id', editingId);
+
+      setItems((prev) =>
+        prev.map((i) =>
+          i.id === editingId ? { ...i, title: editTitle, date: editDate } : i
+        ).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+      );
+
+      setEditingId(null);
+    } catch (error) {
+      console.error('Error updating item:', error);
+    }
+  };
+
+  const cancelEdit = () => {
+    setEditingId(null);
+    setEditTitle('');
+    setEditDate('');
+  };
+
+  const deleteItem = async (item: TimelineItem) => {
+    if (!confirm(`Are you sure you want to delete "${item.title}"?`)) return;
+
+    try {
+      const table = item.type === 'assignment' ? 'assignments' : 'exams';
+
+      await supabase
+        .from(table)
+        .delete()
+        .eq('id', item.id);
+
+      setItems((prev) => prev.filter(i => i.id !== item.id));
+    } catch (error) {
+      console.error('Error deleting item:', error);
     }
   };
 
@@ -150,7 +209,7 @@ export const Timeline = ({ assignments, exams, colorTheme }: TimelineProps) => {
 
                   <motion.div
                     whileHover={{ scale: 1.02 }}
-                    className={`flex-1 p-6 rounded-2xl border transition-all cursor-pointer ${
+                    className={`flex-1 p-6 rounded-2xl border transition-all group/item ${
                       item.completed
                         ? 'bg-green-500/10 border-green-500/20'
                         : `bg-${typeColor}-500/10 border-${typeColor}-500/20`
@@ -159,53 +218,120 @@ export const Timeline = ({ assignments, exams, colorTheme }: TimelineProps) => {
                         ? 'opacity-60'
                         : 'opacity-100'
                     }`}
-                    onClick={() => toggleComplete(item)}
                   >
-                    <div className="flex items-start justify-between mb-2">
-                      <div>
-                        <h3
-                          className={`text-lg font-semibold mb-1 ${
-                            item.completed
-                              ? 'text-green-400 line-through'
-                              : 'text-white'
-                          }`}
-                        >
-                          {item.title}
-                        </h3>
-                        <p className="text-sm text-slate-400">
-                          {getTypeLabel(item.type, item.examType)}
-                        </p>
+                    {editingId === item.id ? (
+                      <div className="space-y-4">
+                        <div>
+                          <label className="block text-sm font-medium text-slate-300 mb-2">
+                            Title
+                          </label>
+                          <input
+                            type="text"
+                            value={editTitle}
+                            onChange={(e) => setEditTitle(e.target.value)}
+                            className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white"
+                            autoFocus
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-slate-300 mb-2">
+                            Due Date
+                          </label>
+                          <input
+                            type="date"
+                            value={editDate}
+                            onChange={(e) => setEditDate(e.target.value)}
+                            className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white"
+                          />
+                        </div>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={saveEdit}
+                            className="flex items-center gap-2 px-4 py-2 bg-green-500 hover:bg-green-600 rounded-lg text-white font-medium transition-colors"
+                          >
+                            <Check className="w-4 h-4" />
+                            Save
+                          </button>
+                          <button
+                            onClick={cancelEdit}
+                            className="flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 rounded-lg text-white font-medium transition-colors"
+                          >
+                            <X className="w-4 h-4" />
+                            Cancel
+                          </button>
+                        </div>
                       </div>
-                      <span
-                        className={`px-3 py-1 rounded-full text-sm font-semibold ${
-                          item.completed
-                            ? 'bg-green-500/20 text-green-400'
-                            : `bg-${typeColor}-500/20 text-${typeColor}-400`
-                        }`}
-                      >
-                        {(item.weight * 100).toFixed(0)}%
-                      </span>
-                    </div>
+                    ) : (
+                      <>
+                        <div className="flex items-start justify-between mb-2">
+                          <div className="flex-1 cursor-pointer" onClick={() => toggleComplete(item)}>
+                            <h3
+                              className={`text-lg font-semibold mb-1 ${
+                                item.completed
+                                  ? 'text-green-400 line-through'
+                                  : 'text-white'
+                              }`}
+                            >
+                              {item.title}
+                            </h3>
+                            <p className="text-sm text-slate-400">
+                              {getTypeLabel(item.type, item.examType)}
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span
+                              className={`px-3 py-1 rounded-full text-sm font-semibold ${
+                                item.completed
+                                  ? 'bg-green-500/20 text-green-400'
+                                  : `bg-${typeColor}-500/20 text-${typeColor}-400`
+                              }`}
+                            >
+                              {(item.weight * 100).toFixed(0)}%
+                            </span>
+                            <div className="flex gap-1 opacity-0 group-hover/item:opacity-100 transition-opacity">
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  startEditing(item);
+                                }}
+                                className="p-2 hover:bg-blue-500/20 rounded-lg transition-colors"
+                              >
+                                <Edit2 className="w-4 h-4 text-blue-400" />
+                              </button>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  deleteItem(item);
+                                }}
+                                className="p-2 hover:bg-red-500/20 rounded-lg transition-colors"
+                              >
+                                <Trash2 className="w-4 h-4 text-red-400" />
+                              </button>
+                            </div>
+                          </div>
+                        </div>
 
-                    <div className="flex items-center gap-4 text-sm text-slate-300">
-                      <div className="flex items-center gap-2">
-                        <Calendar className="w-4 h-4" />
-                        <span>{format(parseISO(item.date), 'MMM d, yyyy')}</span>
-                      </div>
-                      {isPast && !item.completed && (
-                        <span className="text-red-400">Overdue</span>
-                      )}
-                      {item.completed && (
-                        <span className="text-green-400">Completed</span>
-                      )}
-                    </div>
+                        <div className="flex items-center gap-4 text-sm text-slate-300 cursor-pointer" onClick={() => toggleComplete(item)}>
+                          <div className="flex items-center gap-2">
+                            <Calendar className="w-4 h-4" />
+                            <span>{format(parseISO(item.date), 'MMM d, yyyy')}</span>
+                          </div>
+                          {isPast && !item.completed && (
+                            <span className="text-red-400">Overdue</span>
+                          )}
+                          {item.completed && (
+                            <span className="text-green-400">Completed</span>
+                          )}
+                        </div>
 
-                    {item.weight > 0.15 && !item.completed && (
-                      <div className="mt-3 p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
-                        <p className="text-sm text-yellow-400">
-                          This is {(item.weight * 100).toFixed(0)}% of your final grade
-                        </p>
-                      </div>
+                        {item.weight > 0.15 && !item.completed && (
+                          <div className="mt-3 p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
+                            <p className="text-sm text-yellow-400">
+                              This is {(item.weight * 100).toFixed(0)}% of your final grade
+                            </p>
+                          </div>
+                        )}
+                      </>
                     )}
                   </motion.div>
                 </div>

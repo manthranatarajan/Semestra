@@ -2,6 +2,7 @@ import { motion } from 'framer-motion';
 import { BookOpen, Calendar, TrendingUp, Zap, Sparkles } from 'lucide-react';
 import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { SignUpFlow } from './SignUpFlow';
 
 export const LandingPage = () => {
   const [isSignUp, setIsSignUp] = useState(false);
@@ -9,7 +10,8 @@ export const LandingPage = () => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const { signIn, signUp } = useAuth();
+  const [showSignUpFlow, setShowSignUpFlow] = useState(false);
+  const { signIn } = useAuth();
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -18,14 +20,17 @@ export const LandingPage = () => {
 
     try {
       if (isSignUp) {
-        await signUp(email, password);
+        setShowSignUpFlow(true);
+        setLoading(false);
       } else {
         await signIn(email, password);
       }
     } catch (err: any) {
       setError(err.message || 'Authentication failed');
     } finally {
-      setLoading(false);
+      if (!isSignUp) {
+        setLoading(false);
+      }
     }
   };
 
@@ -44,7 +49,7 @@ export const LandingPage = () => {
               <BookOpen className="w-6 h-6" />
             </div>
             <span className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
-              Smart Syllabus
+              Semestra
             </span>
           </motion.div>
         </div>
@@ -64,7 +69,7 @@ export const LandingPage = () => {
               className="inline-flex items-center gap-2 px-4 py-2 bg-blue-500/10 border border-blue-500/20 rounded-full mb-6"
             >
               <Sparkles className="w-4 h-4 text-blue-400" />
-              <span className="text-sm text-blue-300">AI-Powered Syllabus Parser</span>
+              <span className="text-sm text-blue-300">AI-Powered Academic Assistant</span>
             </motion.div>
 
             <h1 className="text-6xl font-bold mb-6 leading-tight">
@@ -211,6 +216,14 @@ export const LandingPage = () => {
           </motion.div>
         </div>
       </main>
+
+      {showSignUpFlow && (
+        <SignUpFlow
+          email={email}
+          password={password}
+          onComplete={() => setShowSignUpFlow(false)}
+        />
+      )}
     </div>
   );
 };
