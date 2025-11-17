@@ -21,14 +21,14 @@ function AppContent() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900/20 to-slate-900 dark:from-slate-900 dark:via-purple-900/20 dark:to-slate-900 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100 dark:from-slate-900 dark:via-purple-900/20 dark:to-slate-900 flex items-center justify-center">
         <div className="text-center">
-          <div className="mb-6 inline-flex items-center gap-3 px-6 py-3 bg-gradient-to-br from-blue-500/20 to-purple-500/20 rounded-2xl border border-white/10">
-            <BookOpen className="w-8 h-8 text-blue-400" />
-            <span className="text-2xl font-bold text-white dark:text-white">Semestra</span>
+          <div className="mb-6 inline-flex items-center gap-3 px-6 py-3 bg-gradient-to-br from-blue-500/20 to-purple-500/20 rounded-2xl border border-slate-200 dark:border-white/10">
+            <BookOpen className="w-8 h-8 text-blue-500 dark:text-blue-400" />
+            <span className="text-2xl font-bold text-slate-900 dark:text-white">Semestra</span>
           </div>
           <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-slate-300 dark:text-slate-300">Loading Semestra...</p>
+          <p className="text-slate-700 dark:text-slate-300">Loading Semestra...</p>
         </div>
       </div>
     );

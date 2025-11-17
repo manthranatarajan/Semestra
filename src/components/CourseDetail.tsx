@@ -92,7 +92,7 @@ export const CourseDetail = ({ course, onBack }: CourseDetailProps) => {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
       <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PHBhdHRlcm4gaWQ9ImdyaWQiIHdpZHRoPSI2MCIgaGVpZ2h0PSI2MCIgcGF0dGVyblVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHBhdGggZD0iTSAxMCAwIEwgMCAwIDAgMTAiIGZpbGw9Im5vbmUiIHN0cm9rZT0icmdiYSgyNTUsMjU1LDI1NSwwLjAzKSIgc3Ryb2tlLXdpZHRoPSIxIi8+PC9wYXR0ZXJuPjwvZGVmcz48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSJ1cmwoI2dyaWQpIi8+PC9zdmc+')] opacity-40"></div>
 
       <div className="relative z-10">
@@ -100,7 +100,7 @@ export const CourseDetail = ({ course, onBack }: CourseDetailProps) => {
           <div className="max-w-7xl mx-auto px-6 py-6">
             <button
               onClick={onBack}
-              className="flex items-center gap-2 text-slate-300 hover:text-white transition-colors mb-4"
+              className="flex items-center gap-2 text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:text-white transition-colors mb-4"
             >
               <ArrowLeft className="w-5 h-5" />
               Back to Dashboard
@@ -108,7 +108,7 @@ export const CourseDetail = ({ course, onBack }: CourseDetailProps) => {
 
             <div className="flex items-start gap-6">
               <div
-                className="w-16 h-16 rounded-2xl flex items-center justify-center text-2xl font-bold text-white flex-shrink-0"
+                className="w-16 h-16 rounded-2xl flex items-center justify-center text-2xl font-bold text-slate-900 dark:text-white flex-shrink-0"
                 style={{ backgroundColor: course.color_theme }}
               >
                 {(isEditing ? editedCourse.course_name : course.course_name).charAt(0)}
@@ -121,7 +121,7 @@ export const CourseDetail = ({ course, onBack }: CourseDetailProps) => {
                       type="text"
                       value={editedCourse.course_name}
                       onChange={(e) => setEditedCourse({ ...editedCourse, course_name: e.target.value })}
-                      className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white text-2xl font-bold focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-slate-900 dark:text-white text-2xl font-bold focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                     <div className="grid md:grid-cols-3 gap-3">
                       <input
@@ -129,28 +129,28 @@ export const CourseDetail = ({ course, onBack }: CourseDetailProps) => {
                         value={editedCourse.instructor}
                         onChange={(e) => setEditedCourse({ ...editedCourse, instructor: e.target.value })}
                         placeholder="Instructor"
-                        className="px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                       />
                       <input
                         type="text"
                         value={editedCourse.semester}
                         onChange={(e) => setEditedCourse({ ...editedCourse, semester: e.target.value })}
                         placeholder="Semester"
-                        className="px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                       />
                       <input
                         type="text"
                         value={editedCourse.meeting_times}
                         onChange={(e) => setEditedCourse({ ...editedCourse, meeting_times: e.target.value })}
                         placeholder="Meeting Times"
-                        className="px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                       />
                     </div>
                   </div>
                 ) : (
                   <>
-                    <h1 className="text-3xl font-bold text-white mb-2">{course.course_name}</h1>
-                    <div className="flex items-center gap-4 text-slate-300">
+                    <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-2">{course.course_name}</h1>
+                    <div className="flex items-center gap-4 text-slate-700 dark:text-slate-300">
                       <span>{course.instructor}</span>
                       <span>•</span>
                       <span>{course.semester}</span>
@@ -172,12 +172,12 @@ export const CourseDetail = ({ course, onBack }: CourseDetailProps) => {
                       onClick={handleCancelEdit}
                       className="p-2 hover:bg-white/10 rounded-lg transition-colors"
                     >
-                      <X className="w-5 h-5 text-slate-400" />
+                      <X className="w-5 h-5 text-slate-600 dark:text-slate-400" />
                     </button>
                     <button
                       onClick={handleSaveCourse}
                       disabled={saving}
-                      className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 rounded-lg text-white transition-colors disabled:opacity-50"
+                      className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 rounded-lg text-slate-900 dark:text-white transition-colors disabled:opacity-50"
                     >
                       <Save className="w-5 h-5" />
                       {saving ? 'Saving...' : 'Save'}
@@ -186,7 +186,7 @@ export const CourseDetail = ({ course, onBack }: CourseDetailProps) => {
                 ) : (
                   <button
                     onClick={() => setIsEditing(true)}
-                    className="flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 rounded-lg text-slate-300 hover:text-white transition-all"
+                    className="flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 rounded-lg text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:text-white transition-all"
                   >
                     <Edit2 className="w-5 h-5" />
                     Edit
@@ -202,8 +202,8 @@ export const CourseDetail = ({ course, onBack }: CourseDetailProps) => {
                   onClick={() => setActiveTab(tab.id)}
                   className={`flex items-center gap-2 px-6 py-3 rounded-xl font-semibold transition-all whitespace-nowrap ${
                     activeTab === tab.id
-                      ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg'
-                      : 'bg-white/5 text-slate-300 hover:bg-white/10'
+                      ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-slate-900 dark:text-white shadow-lg'
+                      : 'bg-white/5 text-slate-700 dark:text-slate-300 hover:bg-white/10'
                   }`}
                 >
                   <tab.icon className="w-5 h-5" />

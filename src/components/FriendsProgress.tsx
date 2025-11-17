@@ -19,12 +19,70 @@ interface FriendWithProgress {
   studyStreak: number;
 }
 
+const DUMMY_FRIENDS: FriendWithProgress[] = [
+  {
+    userId: 'dummy-1',
+    displayName: 'Sarah Johnson',
+    username: 'sarahj',
+    progress: 92,
+    tasksCompleted: 23,
+    totalTasks: 25,
+    studyStreak: 12,
+  },
+  {
+    userId: 'dummy-2',
+    displayName: 'Michael Chen',
+    username: 'mchen',
+    progress: 85,
+    tasksCompleted: 20,
+    totalTasks: 25,
+    studyStreak: 8,
+  },
+  {
+    userId: 'dummy-3',
+    displayName: 'Emma Rodriguez',
+    username: 'emmarodriguez',
+    progress: 78,
+    tasksCompleted: 19,
+    totalTasks: 25,
+    studyStreak: 5,
+  },
+  {
+    userId: 'dummy-4',
+    displayName: 'James Wilson',
+    username: 'jwilson',
+    progress: 71,
+    tasksCompleted: 17,
+    totalTasks: 25,
+    studyStreak: 3,
+  },
+  {
+    userId: 'dummy-5',
+    displayName: 'Olivia Martinez',
+    username: 'oliviam',
+    progress: 65,
+    tasksCompleted: 16,
+    totalTasks: 25,
+    studyStreak: 7,
+  },
+  {
+    userId: 'dummy-6',
+    displayName: 'Alex Kim',
+    username: 'alexk',
+    progress: 58,
+    tasksCompleted: 14,
+    totalTasks: 25,
+    studyStreak: 2,
+  },
+];
+
 export const FriendsProgress = ({ courseId }: FriendsProgressProps) => {
   const { user } = useAuth();
   const [friends, setFriends] = useState<FriendWithProgress[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
+  const [useDummyData, setUseDummyData] = useState(false);
 
   useEffect(() => {
     fetchFriendsProgress();
@@ -41,6 +99,8 @@ export const FriendsProgress = ({ courseId }: FriendsProgressProps) => {
         .eq('status', 'accepted');
 
       if (!friendships || friendships.length === 0) {
+        setUseDummyData(true);
+        setFriends(DUMMY_FRIENDS);
         setLoading(false);
         return;
       }
@@ -111,6 +171,14 @@ export const FriendsProgress = ({ courseId }: FriendsProgressProps) => {
 
   return (
     <div className="space-y-6">
+      {useDummyData && (
+        <div className="p-4 bg-blue-500/10 border border-blue-500/20 rounded-xl">
+          <p className="text-blue-400 text-sm">
+            <span className="font-semibold">Demo Mode:</span> Showing example friends. Add real friends to see their actual progress!
+          </p>
+        </div>
+      )}
+
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold text-white mb-2">Friends' Progress</h2>

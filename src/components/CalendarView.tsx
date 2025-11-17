@@ -131,10 +131,10 @@ export const CalendarView = ({ assignments, exams, colorTheme, courseId }: Calen
             onClick={() => setCurrentDate(subMonths(currentDate, 1))}
             className="p-2 hover:bg-white/10 rounded-lg transition-colors"
           >
-            <ChevronLeft className="w-6 h-6 text-white" />
+            <ChevronLeft className="w-6 h-6 text-slate-900 dark:text-white" />
           </button>
 
-          <h2 className="text-3xl font-bold text-white min-w-[200px] text-center">
+          <h2 className="text-3xl font-bold text-slate-900 dark:text-white min-w-[200px] text-center">
             {format(currentDate, 'MMMM yyyy')}
           </h2>
 
@@ -142,21 +142,21 @@ export const CalendarView = ({ assignments, exams, colorTheme, courseId }: Calen
             onClick={() => setCurrentDate(addMonths(currentDate, 1))}
             className="p-2 hover:bg-white/10 rounded-lg transition-colors"
           >
-            <ChevronRight className="w-6 h-6 text-white" />
+            <ChevronRight className="w-6 h-6 text-slate-900 dark:text-white" />
           </button>
         </div>
 
         <div className="flex items-center gap-3">
           <button
             onClick={() => setShowAddEventModal(true)}
-            className="flex items-center gap-2 px-6 py-3 bg-green-600 hover:bg-green-700 rounded-xl font-semibold text-white transition-all"
+            className="flex items-center gap-2 px-6 py-3 bg-green-600 hover:bg-green-700 rounded-xl font-semibold text-slate-900 dark:text-white transition-all"
           >
             <Plus className="w-5 h-5" />
             Add Event
           </button>
           <button
             onClick={handleExport}
-            className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 rounded-xl font-semibold text-white transition-all"
+            className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 rounded-xl font-semibold text-slate-900 dark:text-white transition-all"
           >
             <Download className="w-5 h-5" />
             Export to Calendar
@@ -174,7 +174,7 @@ export const CalendarView = ({ assignments, exams, colorTheme, courseId }: Calen
           {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
             <div
               key={day}
-              className="text-center text-sm font-semibold text-slate-400 py-2"
+              className="text-center text-sm font-semibold text-slate-600 dark:text-slate-400 py-2"
             >
               {day}
             </div>
@@ -205,7 +205,7 @@ export const CalendarView = ({ assignments, exams, colorTheme, courseId }: Calen
                 <div className="h-full flex flex-col">
                   <div
                     className={`text-sm font-semibold mb-1 ${
-                      isToday ? 'text-blue-400' : 'text-white'
+                      isToday ? 'text-blue-400' : 'text-slate-900 dark:text-white'
                     }`}
                   >
                     {format(day, 'd')}
@@ -226,7 +226,7 @@ export const CalendarView = ({ assignments, exams, colorTheme, courseId }: Calen
                       </div>
                     ))}
                     {dayEvents.length > 3 && (
-                      <div className="text-xs text-slate-400 px-2">
+                      <div className="text-xs text-slate-600 dark:text-slate-400 px-2">
                         +{dayEvents.length - 3} more
                       </div>
                     )}
@@ -245,7 +245,7 @@ export const CalendarView = ({ assignments, exams, colorTheme, courseId }: Calen
           transition={{ delay: 0.2 }}
           className="bg-gradient-to-br from-white/5 to-white/10 backdrop-blur-md rounded-2xl border border-white/10 p-6"
         >
-          <h3 className="text-xl font-bold text-white mb-4">Upcoming Assignments</h3>
+          <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-4">Upcoming Assignments</h3>
           <div className="space-y-3">
             {upcomingAssignments.length > 0 ? (
               upcomingAssignments.map((assignment) => (
@@ -254,8 +254,8 @@ export const CalendarView = ({ assignments, exams, colorTheme, courseId }: Calen
                   className="flex items-center justify-between p-3 bg-blue-500/10 border border-blue-500/20 rounded-xl"
                 >
                   <div>
-                    <p className="text-white font-medium text-sm">{assignment.title}</p>
-                    <p className="text-xs text-slate-400">
+                    <p className="text-slate-900 dark:text-white font-medium text-sm">{assignment.title}</p>
+                    <p className="text-xs text-slate-600 dark:text-slate-400">
                       {format(parseISO(assignment.due_date!), 'MMM d, yyyy')}
                     </p>
                   </div>
@@ -265,7 +265,7 @@ export const CalendarView = ({ assignments, exams, colorTheme, courseId }: Calen
                 </div>
               ))
             ) : (
-              <p className="text-slate-400 text-sm">No upcoming assignments</p>
+              <p className="text-slate-600 dark:text-slate-400 text-sm">No upcoming assignments</p>
             )}
           </div>
         </motion.div>
@@ -276,7 +276,7 @@ export const CalendarView = ({ assignments, exams, colorTheme, courseId }: Calen
           transition={{ delay: 0.3 }}
           className="bg-gradient-to-br from-white/5 to-white/10 backdrop-blur-md rounded-2xl border border-white/10 p-6"
         >
-          <h3 className="text-xl font-bold text-white mb-4">Upcoming Exams</h3>
+          <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-4">Upcoming Exams</h3>
           <div className="space-y-3">
             {upcomingExams.length > 0 ? (
               upcomingExams.map((exam) => (
@@ -285,8 +285,8 @@ export const CalendarView = ({ assignments, exams, colorTheme, courseId }: Calen
                   className="flex items-center justify-between p-3 bg-red-500/10 border border-red-500/20 rounded-xl"
                 >
                   <div>
-                    <p className="text-white font-medium text-sm">{exam.title}</p>
-                    <p className="text-xs text-slate-400">
+                    <p className="text-slate-900 dark:text-white font-medium text-sm">{exam.title}</p>
+                    <p className="text-xs text-slate-600 dark:text-slate-400">
                       {format(parseISO(exam.exam_date!), 'MMM d, yyyy')}
                     </p>
                   </div>
@@ -296,7 +296,7 @@ export const CalendarView = ({ assignments, exams, colorTheme, courseId }: Calen
                 </div>
               ))
             ) : (
-              <p className="text-slate-400 text-sm">No upcoming exams</p>
+              <p className="text-slate-600 dark:text-slate-400 text-sm">No upcoming exams</p>
             )}
           </div>
         </motion.div>
@@ -319,18 +319,18 @@ export const CalendarView = ({ assignments, exams, colorTheme, courseId }: Calen
               className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl border border-white/10 p-8 max-w-md w-full shadow-2xl"
             >
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl font-bold text-white">Add Custom Event</h2>
+                <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Add Custom Event</h2>
                 <button
                   onClick={() => setShowAddEventModal(false)}
                   className="p-2 hover:bg-white/10 rounded-lg transition-colors"
                 >
-                  <X className="w-5 h-5 text-slate-400" />
+                  <X className="w-5 h-5 text-slate-600 dark:text-slate-400" />
                 </button>
               </div>
 
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                     Event Title
                   </label>
                   <input
@@ -338,24 +338,24 @@ export const CalendarView = ({ assignments, exams, colorTheme, courseId }: Calen
                     value={newEventTitle}
                     onChange={(e) => setNewEventTitle(e.target.value)}
                     placeholder="e.g., Office Hours, Study Session"
-                    className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-white placeholder-slate-400"
+                    className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-900 dark:text-white placeholder-slate-400"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                     Date
                   </label>
                   <input
                     type="date"
                     value={newEventDate}
                     onChange={(e) => setNewEventDate(e.target.value)}
-                    className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-white"
+                    className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-900 dark:text-white"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                     Type
                   </label>
                   <div className="flex gap-3">
@@ -363,8 +363,8 @@ export const CalendarView = ({ assignments, exams, colorTheme, courseId }: Calen
                       onClick={() => setNewEventType('assignment')}
                       className={`flex-1 px-4 py-3 rounded-xl font-semibold transition-all ${
                         newEventType === 'assignment'
-                          ? 'bg-blue-500 text-white'
-                          : 'bg-white/5 text-slate-300 hover:bg-white/10'
+                          ? 'bg-blue-500 text-slate-900 dark:text-white'
+                          : 'bg-white/5 text-slate-700 dark:text-slate-300 hover:bg-white/10'
                       }`}
                     >
                       Assignment
@@ -373,8 +373,8 @@ export const CalendarView = ({ assignments, exams, colorTheme, courseId }: Calen
                       onClick={() => setNewEventType('exam')}
                       className={`flex-1 px-4 py-3 rounded-xl font-semibold transition-all ${
                         newEventType === 'exam'
-                          ? 'bg-red-500 text-white'
-                          : 'bg-white/5 text-slate-300 hover:bg-white/10'
+                          ? 'bg-red-500 text-slate-900 dark:text-white'
+                          : 'bg-white/5 text-slate-700 dark:text-slate-300 hover:bg-white/10'
                       }`}
                     >
                       Exam
@@ -385,14 +385,14 @@ export const CalendarView = ({ assignments, exams, colorTheme, courseId }: Calen
                 <div className="flex gap-3 pt-4">
                   <button
                     onClick={() => setShowAddEventModal(false)}
-                    className="flex-1 px-6 py-3 bg-white/5 hover:bg-white/10 rounded-xl font-semibold text-white transition-all"
+                    className="flex-1 px-6 py-3 bg-white/5 hover:bg-white/10 rounded-xl font-semibold text-slate-900 dark:text-white transition-all"
                   >
                     Cancel
                   </button>
                   <button
                     onClick={handleAddEvent}
                     disabled={!newEventTitle || !newEventDate || saving}
-                    className="flex-1 px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 rounded-xl font-semibold text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="flex-1 px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 rounded-xl font-semibold text-slate-900 dark:text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {saving ? 'Adding...' : 'Add Event'}
                   </button>
