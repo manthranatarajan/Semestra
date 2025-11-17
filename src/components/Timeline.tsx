@@ -328,7 +328,7 @@ export const Timeline = ({ assignments, exams, colorTheme, courseId, onRefresh }
                             type="text"
                             value={editTitle}
                             onChange={(e) => setEditTitle(e.target.value)}
-                            className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-black dark:text-white"
+                            className="w-full px-4 py-2 bg-white dark:bg-white/5 border border-slate-300 dark:border-white/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-black dark:text-white"
                             autoFocus
                           />
                         </div>
@@ -340,7 +340,7 @@ export const Timeline = ({ assignments, exams, colorTheme, courseId, onRefresh }
                             type="date"
                             value={editDate}
                             onChange={(e) => setEditDate(e.target.value)}
-                            className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-black dark:text-white"
+                            className="w-full px-4 py-2 bg-white dark:bg-white/5 border border-slate-300 dark:border-white/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-black dark:text-white"
                           />
                         </div>
                         <div className="flex gap-2">
@@ -353,7 +353,7 @@ export const Timeline = ({ assignments, exams, colorTheme, courseId, onRefresh }
                           </button>
                           <button
                             onClick={cancelEdit}
-                            className="flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 rounded-lg text-white font-medium transition-colors"
+                            className="flex items-center gap-2 px-4 py-2 bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 rounded-lg text-slate-900 dark:text-white font-medium transition-colors"
                           >
                             <X className="w-4 h-4" />
                             Cancel
@@ -499,7 +499,7 @@ export const Timeline = ({ assignments, exams, colorTheme, courseId, onRefresh }
                     value={addTitle}
                     onChange={(e) => setAddTitle(e.target.value)}
                     placeholder="e.g., Final Project"
-                    className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-black dark:text-white placeholder-slate-500 dark:placeholder-slate-400"
+                    className="w-full px-4 py-2 bg-white dark:bg-white/5 border border-slate-300 dark:border-white/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-black dark:text-white placeholder-slate-500 dark:placeholder-slate-400"
                   />
                 </div>
 
@@ -511,7 +511,7 @@ export const Timeline = ({ assignments, exams, colorTheme, courseId, onRefresh }
                     type="date"
                     value={addDate}
                     onChange={(e) => setAddDate(e.target.value)}
-                    className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-black dark:text-white"
+                    className="w-full px-4 py-2 bg-white dark:bg-white/5 border border-slate-300 dark:border-white/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-black dark:text-white"
                   />
                 </div>
 
@@ -526,7 +526,7 @@ export const Timeline = ({ assignments, exams, colorTheme, courseId, onRefresh }
                     min="0"
                     max="100"
                     placeholder="10"
-                    className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-black dark:text-white placeholder-slate-500 dark:placeholder-slate-400"
+                    className="w-full px-4 py-2 bg-white dark:bg-white/5 border border-slate-300 dark:border-white/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-black dark:text-white placeholder-slate-500 dark:placeholder-slate-400"
                   />
                 </div>
               </div>
@@ -535,7 +535,7 @@ export const Timeline = ({ assignments, exams, colorTheme, courseId, onRefresh }
                 <button
                   onClick={() => setShowAddModal(false)}
                   disabled={saving}
-                  className="flex-1 px-4 py-3 bg-white/5 hover:bg-white/10 rounded-xl font-medium text-black dark:text-white transition-all disabled:opacity-50"
+                  className="flex-1 px-4 py-3 bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 rounded-xl font-medium text-black dark:text-white transition-all disabled:opacity-50"
                 >
                   Cancel
                 </button>

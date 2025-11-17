@@ -181,7 +181,7 @@ export const FriendsProgress = ({ courseId }: FriendsProgressProps) => {
 
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-white mb-2">Friends' Progress</h2>
+          <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">Friends' Progress</h2>
           <p className="text-slate-400">See how your friends are doing in this course</p>
         </div>
         <div className="flex items-center gap-3">
@@ -214,7 +214,7 @@ export const FriendsProgress = ({ courseId }: FriendsProgressProps) => {
           <div className="w-24 h-24 bg-gradient-to-br from-blue-500/20 to-purple-500/20 rounded-full flex items-center justify-center mb-6">
             <Users className="w-12 h-12 text-blue-400" />
           </div>
-          <h3 className="text-xl font-bold text-white mb-2">No friends yet</h3>
+          <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">No friends yet</h3>
           <p className="text-slate-400 mb-6 text-center max-w-md">
             Add friends to see their progress and motivate each other to stay on track!
           </p>
@@ -252,7 +252,7 @@ export const FriendsProgress = ({ courseId }: FriendsProgressProps) => {
                     </div>
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">
-                        <h3 className="text-xl font-bold text-white">{filteredFriends[0].displayName}</h3>
+                        <h3 className="text-xl font-bold text-slate-900 dark:text-white">{filteredFriends[0].displayName}</h3>
                         {filteredFriends[0].username && (
                           <span className="text-sm text-slate-400">@{filteredFriends[0].username}</span>
                         )}
@@ -294,13 +294,13 @@ export const FriendsProgress = ({ courseId }: FriendsProgressProps) => {
                         {getInitials(friend.displayName)}
                       </div>
                       <div className="flex-1">
-                        <h4 className="font-semibold text-white">{friend.displayName}</h4>
+                        <h4 className="font-semibold text-slate-900 dark:text-white">{friend.displayName}</h4>
                         {friend.username && (
                           <p className="text-sm text-slate-400">@{friend.username}</p>
                         )}
                       </div>
                       <div className="text-right">
-                        <div className="text-2xl font-bold text-white">{friend.progress}%</div>
+                        <div className="text-2xl font-bold text-slate-900 dark:text-white">{friend.progress}%</div>
                       </div>
                     </div>
 

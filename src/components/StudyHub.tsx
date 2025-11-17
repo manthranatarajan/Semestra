@@ -150,14 +150,14 @@ export const StudyHub = ({ courseId }: StudyHubProps) => {
             <div className="flex items-center gap-4 mb-4">
               <button
                 onClick={() => setFocusMinutes(Math.max(5, focusMinutes - 5))}
-                className="px-4 py-2 bg-white/5 hover:bg-white/10 rounded-lg text-white transition-colors"
+                className="px-4 py-2 bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 rounded-lg text-slate-900 dark:text-white transition-colors"
               >
                 -5
               </button>
               <span className="text-black dark:text-white font-semibold">{focusMinutes} min</span>
               <button
                 onClick={() => setFocusMinutes(Math.min(60, focusMinutes + 5))}
-                className="px-4 py-2 bg-white/5 hover:bg-white/10 rounded-lg text-white transition-colors"
+                className="px-4 py-2 bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 rounded-lg text-slate-900 dark:text-white transition-colors"
               >
                 +5
               </button>
@@ -228,7 +228,7 @@ export const StudyHub = ({ courseId }: StudyHubProps) => {
               onChange={(e) => setNewNote(e.target.value)}
               onKeyPress={(e) => e.key === 'Enter' && addNote()}
               placeholder="Add a note, idea, or reminder..."
-              className="flex-1 px-4 py-3 bg-white/5 border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 text-black dark:text-white placeholder-slate-500 dark:placeholder-slate-400"
+              className="flex-1 px-4 py-3 bg-white dark:bg-white/5 border border-slate-300 dark:border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 text-black dark:text-white placeholder-slate-500 dark:placeholder-slate-400"
             />
             <button
               onClick={addNote}

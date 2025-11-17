@@ -190,7 +190,7 @@ export const Dashboard = () => {
                 whileHover={{ y: -8, scale: 1.02 }}
                 className="group relative"
               >
-                <div className="relative p-6 bg-white dark:bg-gradient-to-br dark:from-white/5 dark:to-white/10 backdrop-blur-md rounded-2xl border border-slate-200 dark:border-white/10 hover:border-slate-300 dark:hover:border-white/20 transition-all shadow-lg hover:shadow-2xl">
+                <div className="relative p-6 bg-white/90 backdrop-blur-md dark:bg-gradient-to-br dark:from-white/5 dark:to-white/10 rounded-2xl border border-slate-200 dark:border-white/10 hover:border-slate-300 dark:hover:border-white/20 transition-all shadow-lg hover:shadow-2xl">
                   <div
                     className="absolute top-0 left-0 w-full h-2 rounded-t-2xl"
                     style={{ backgroundColor: course.color_theme }}

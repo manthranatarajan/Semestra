@@ -129,7 +129,7 @@ export const CalendarView = ({ assignments, exams, colorTheme, courseId }: Calen
         <div className="flex items-center gap-4">
           <button
             onClick={() => setCurrentDate(subMonths(currentDate, 1))}
-            className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+            className="p-2 hover:bg-slate-200 dark:hover:bg-white/10 rounded-lg transition-colors"
           >
             <ChevronLeft className="w-6 h-6 text-slate-900 dark:text-white" />
           </button>
@@ -140,7 +140,7 @@ export const CalendarView = ({ assignments, exams, colorTheme, courseId }: Calen
 
           <button
             onClick={() => setCurrentDate(addMonths(currentDate, 1))}
-            className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+            className="p-2 hover:bg-slate-200 dark:hover:bg-white/10 rounded-lg transition-colors"
           >
             <ChevronRight className="w-6 h-6 text-slate-900 dark:text-white" />
           </button>
@@ -149,14 +149,14 @@ export const CalendarView = ({ assignments, exams, colorTheme, courseId }: Calen
         <div className="flex items-center gap-3">
           <button
             onClick={() => setShowAddEventModal(true)}
-            className="flex items-center gap-2 px-6 py-3 bg-green-600 hover:bg-green-700 rounded-xl font-semibold text-slate-900 dark:text-white transition-all"
+            className="flex items-center gap-2 px-6 py-3 bg-green-600 hover:bg-green-700 rounded-xl font-semibold text-white transition-all"
           >
             <Plus className="w-5 h-5" />
             Add Event
           </button>
           <button
             onClick={handleExport}
-            className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 rounded-xl font-semibold text-slate-900 dark:text-white transition-all"
+            className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 rounded-xl font-semibold text-white transition-all"
           >
             <Download className="w-5 h-5" />
             Export to Calendar
@@ -168,7 +168,7 @@ export const CalendarView = ({ assignments, exams, colorTheme, courseId }: Calen
         key={currentDate.toISOString()}
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
-        className="bg-gradient-to-br from-white/5 to-white/10 backdrop-blur-md rounded-2xl border border-white/10 p-6"
+        className="bg-white/80 dark:bg-gradient-to-br dark:from-white/5 dark:to-white/10 backdrop-blur-md rounded-2xl border border-slate-200 dark:border-white/10 p-6"
       >
         <div className="grid grid-cols-7 gap-2 mb-4">
           {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
@@ -198,8 +198,8 @@ export const CalendarView = ({ assignments, exams, colorTheme, courseId }: Calen
                   isToday
                     ? 'bg-blue-500/20 border-2 border-blue-500'
                     : dayEvents.length > 0
-                    ? 'bg-white/5 hover:bg-white/10'
-                    : 'bg-transparent hover:bg-white/5'
+                    ? 'bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10'
+                    : 'bg-transparent hover:bg-slate-100 dark:hover:bg-white/5'
                 }`}
               >
                 <div className="h-full flex flex-col">
@@ -243,7 +243,7 @@ export const CalendarView = ({ assignments, exams, colorTheme, courseId }: Calen
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          className="bg-gradient-to-br from-white/5 to-white/10 backdrop-blur-md rounded-2xl border border-white/10 p-6"
+          className="bg-white/80 dark:bg-gradient-to-br dark:from-white/5 dark:to-white/10 backdrop-blur-md rounded-2xl border border-slate-200 dark:border-white/10 p-6"
         >
           <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-4">Upcoming Assignments</h3>
           <div className="space-y-3">
@@ -274,7 +274,7 @@ export const CalendarView = ({ assignments, exams, colorTheme, courseId }: Calen
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
-          className="bg-gradient-to-br from-white/5 to-white/10 backdrop-blur-md rounded-2xl border border-white/10 p-6"
+          className="bg-white/80 dark:bg-gradient-to-br dark:from-white/5 dark:to-white/10 backdrop-blur-md rounded-2xl border border-slate-200 dark:border-white/10 p-6"
         >
           <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-4">Upcoming Exams</h3>
           <div className="space-y-3">
@@ -322,7 +322,7 @@ export const CalendarView = ({ assignments, exams, colorTheme, courseId }: Calen
                 <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Add Custom Event</h2>
                 <button
                   onClick={() => setShowAddEventModal(false)}
-                  className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+                  className="p-2 hover:bg-slate-200 dark:hover:bg-white/10 rounded-lg transition-colors"
                 >
                   <X className="w-5 h-5 text-slate-600 dark:text-slate-400" />
                 </button>

@@ -223,7 +223,7 @@ export const GradePredictor = ({ assignments, exams, gradeWeights, courseId, onR
           animate={{ opacity: 1, y: 0 }}
           className="bg-gradient-to-br from-white/5 to-white/10 backdrop-blur-md rounded-2xl border border-white/10 p-8"
         >
-          <h2 className="text-2xl font-bold text-white mb-6">Current Grade</h2>
+          <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-6">Current Grade</h2>
 
           <div className="flex items-center justify-center mb-8">
             <div className="text-center">
@@ -255,7 +255,7 @@ export const GradePredictor = ({ assignments, exams, gradeWeights, courseId, onR
           className="bg-gradient-to-br from-white/5 to-white/10 backdrop-blur-md rounded-2xl border border-white/10 p-8"
         >
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold text-white">Grade Breakdown</h2>
+            <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Grade Breakdown</h2>
             {editingWeights ? (
               <div className="flex gap-2">
                 <button
@@ -269,7 +269,7 @@ export const GradePredictor = ({ assignments, exams, gradeWeights, courseId, onR
                 <button
                   onClick={handleCancelWeightEdit}
                   disabled={saving}
-                  className="flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 rounded-lg text-white font-medium transition-colors disabled:opacity-50"
+                  className="flex items-center gap-2 px-4 py-2 bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 rounded-lg text-slate-900 dark:text-white font-medium transition-colors disabled:opacity-50"
                 >
                   <X className="w-4 h-4" />
                   Cancel
@@ -278,7 +278,7 @@ export const GradePredictor = ({ assignments, exams, gradeWeights, courseId, onR
             ) : (
               <button
                 onClick={() => setEditingWeights(true)}
-                className="flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 rounded-lg text-slate-300 hover:text-white transition-all"
+                className="flex items-center gap-2 px-4 py-2 bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 rounded-lg text-slate-300 hover:text-white transition-all"
               >
                 <Edit2 className="w-4 h-4" />
                 Edit
@@ -298,7 +298,7 @@ export const GradePredictor = ({ assignments, exams, gradeWeights, courseId, onR
                       min="0"
                       max="100"
                       step="0.1"
-                      className="w-20 px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white text-center focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-20 px-3 py-2 bg-white dark:bg-white/5 border border-slate-300 dark:border-white/10 rounded-lg text-slate-900 dark:text-white text-center focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                     <span className="text-slate-400">%</span>
                   </div>
@@ -327,7 +327,7 @@ export const GradePredictor = ({ assignments, exams, gradeWeights, courseId, onR
         transition={{ delay: 0.2 }}
         className="bg-gradient-to-br from-white/5 to-white/10 backdrop-blur-md rounded-2xl border border-white/10 p-8"
       >
-        <h2 className="text-2xl font-bold text-white mb-6">What-If Scenario</h2>
+        <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-6">What-If Scenario</h2>
 
         <div className="mb-6">
           <label className="block text-slate-300 mb-3">
@@ -367,7 +367,7 @@ export const GradePredictor = ({ assignments, exams, gradeWeights, courseId, onR
               ) : (
                 <Minus className="w-8 h-8 text-slate-400" />
               )}
-              <span className="text-3xl font-bold text-white">
+              <span className="text-3xl font-bold text-slate-900 dark:text-white">
                 {Math.abs(whatIfGrade - currentGrade).toFixed(1)}%
               </span>
             </div>
@@ -382,7 +382,7 @@ export const GradePredictor = ({ assignments, exams, gradeWeights, courseId, onR
         transition={{ delay: 0.3 }}
         className="bg-gradient-to-br from-white/5 to-white/10 backdrop-blur-md rounded-2xl border border-white/10 p-8"
       >
-        <h2 className="text-2xl font-bold text-white mb-6">Enter Your Scores</h2>
+        <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-6">Enter Your Scores</h2>
 
         <div className="space-y-6">
           {assignments.length > 0 && (
@@ -414,7 +414,7 @@ export const GradePredictor = ({ assignments, exams, gradeWeights, courseId, onR
                           )
                         }
                         placeholder="Score"
-                        className="w-24 px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white text-center focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-24 px-3 py-2 bg-white dark:bg-white/5 border border-slate-300 dark:border-white/10 rounded-lg text-slate-900 dark:text-white text-center focus:outline-none focus:ring-2 focus:ring-blue-500"
                       />
                       <span className="text-slate-400">/ 100</span>
                     </div>
@@ -449,7 +449,7 @@ export const GradePredictor = ({ assignments, exams, gradeWeights, courseId, onR
                           handleScoreChange(exam.id, 'exam', Number(e.target.value))
                         }
                         placeholder="Score"
-                        className="w-24 px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white text-center focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-24 px-3 py-2 bg-white dark:bg-white/5 border border-slate-300 dark:border-white/10 rounded-lg text-slate-900 dark:text-white text-center focus:outline-none focus:ring-2 focus:ring-blue-500"
                       />
                       <span className="text-slate-400">/ 100</span>
                     </div>
