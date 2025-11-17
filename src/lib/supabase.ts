@@ -87,6 +87,9 @@ export interface UserPreferences {
   theme: 'light' | 'dark';
   share_progress: boolean;
   share_courses: boolean;
+  school: string | null;
+  grad_year: number | null;
+  major: string | null;
   created_at: string;
   updated_at: string;
 }

@@ -2,7 +2,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabase';
-import { User, Moon, Sun, Check, Search } from 'lucide-react';
+import { User, GraduationCap, BookOpen, Calendar } from 'lucide-react';
 
 interface SignUpFlowProps {
   email: string;
@@ -14,7 +14,9 @@ export const SignUpFlow = ({ email, password, onComplete }: SignUpFlowProps) => 
   const [step, setStep] = useState(1);
   const [displayName, setDisplayName] = useState('');
   const [username, setUsername] = useState('');
-  const [theme, setTheme] = useState<'light' | 'dark'>('dark');
+  const [school, setSchool] = useState('');
+  const [gradYear, setGradYear] = useState('');
+  const [major, setMajor] = useState('');
   const [shareProgress, setShareProgress] = useState(true);
   const [shareCourses, setShareCourses] = useState(true);
   const [error, setError] = useState('');
@@ -37,9 +39,12 @@ export const SignUpFlow = ({ email, password, onComplete }: SignUpFlowProps) => 
             user_id: user.id,
             display_name: displayName,
             username: username || null,
-            theme,
+            theme: 'dark',
             share_progress: shareProgress,
             share_courses: shareCourses,
+            school: school || null,
+            grad_year: gradYear ? parseInt(gradYear) : null,
+            major: major || null,
           });
 
         if (prefError) {
@@ -94,12 +99,12 @@ export const SignUpFlow = ({ email, password, onComplete }: SignUpFlowProps) => 
           </div>
           <h2 className="text-2xl font-bold text-white mb-2">
             {step === 1 && "Let's personalize your Semestra experience!"}
-            {step === 2 && 'Choose your theme'}
+            {step === 2 && 'Tell us about your studies'}
             {step === 3 && 'Privacy settings'}
           </h2>
           <p className="text-slate-400 text-sm">
             {step === 1 && 'Tell us a bit about yourself'}
-            {step === 2 && 'Select your preferred appearance'}
+            {step === 2 && 'Add your school and academic information'}
             {step === 3 && 'Control what you share with friends'}
           </p>
         </div>
@@ -156,52 +161,58 @@ export const SignUpFlow = ({ email, password, onComplete }: SignUpFlowProps) => 
               exit={{ opacity: 0, x: -20 }}
               className="space-y-4"
             >
-              <div className="grid grid-cols-2 gap-4">
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => setTheme('light')}
-                  className={`p-6 rounded-xl border-2 transition-all ${
-                    theme === 'light'
-                      ? 'border-blue-500 bg-blue-500/10'
-                      : 'border-white/10 bg-white/5 hover:border-white/20'
-                  }`}
-                >
-                  <Sun className="w-8 h-8 text-yellow-400 mx-auto mb-3" />
-                  <p className="text-white font-medium">Light</p>
-                  {theme === 'light' && (
-                    <motion.div
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                      className="mt-2"
-                    >
-                      <Check className="w-5 h-5 text-blue-400 mx-auto" />
-                    </motion.div>
-                  )}
-                </motion.button>
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-2">
+                  School / University
+                </label>
+                <div className="relative">
+                  <GraduationCap className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                  <input
+                    type="text"
+                    value={school}
+                    onChange={(e) => setSchool(e.target.value)}
+                    placeholder="e.g., Harvard University"
+                    className="w-full pl-10 pr-4 py-3 bg-white/5 border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-white placeholder-slate-500"
+                  />
+                </div>
+              </div>
 
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => setTheme('dark')}
-                  className={`p-6 rounded-xl border-2 transition-all ${
-                    theme === 'dark'
-                      ? 'border-blue-500 bg-blue-500/10'
-                      : 'border-white/10 bg-white/5 hover:border-white/20'
-                  }`}
-                >
-                  <Moon className="w-8 h-8 text-blue-400 mx-auto mb-3" />
-                  <p className="text-white font-medium">Dark</p>
-                  {theme === 'dark' && (
-                    <motion.div
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                      className="mt-2"
-                    >
-                      <Check className="w-5 h-5 text-blue-400 mx-auto" />
-                    </motion.div>
-                  )}
-                </motion.button>
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-2">
+                  Graduation Year
+                </label>
+                <div className="relative">
+                  <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                  <input
+                    type="number"
+                    value={gradYear}
+                    onChange={(e) => setGradYear(e.target.value)}
+                    placeholder="e.g., 2026"
+                    min="2020"
+                    max="2035"
+                    className="w-full pl-10 pr-4 py-3 bg-white/5 border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-white placeholder-slate-500"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-2">
+                  Major / Field of Study
+                </label>
+                <div className="relative">
+                  <BookOpen className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                  <input
+                    type="text"
+                    value={major}
+                    onChange={(e) => setMajor(e.target.value)}
+                    placeholder="e.g., Computer Science"
+                    className="w-full pl-10 pr-4 py-3 bg-white/5 border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-white placeholder-slate-500"
+                  />
+                </div>
+              </div>
+
+              <div className="p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg">
+                <p className="text-xs text-blue-300">All fields are optional and can be updated later</p>
               </div>
             </motion.div>
           )}

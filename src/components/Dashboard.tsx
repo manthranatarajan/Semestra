@@ -1,11 +1,12 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { BookOpen, Upload, LogOut, Plus, Calendar, Trash2 } from 'lucide-react';
+import { BookOpen, Upload, LogOut, Plus, Calendar, Trash2, User } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { supabase, Course } from '../lib/supabase';
 import { UploadModal } from './UploadModal';
 import { CourseDetail } from './CourseDetail';
 import { DeleteModal } from './DeleteModal';
+import { ProfilePanel } from './ProfilePanel';
 import { useToast } from './Toast';
 
 interface CourseWithProgress extends Course {
@@ -13,7 +14,7 @@ interface CourseWithProgress extends Course {
 }
 
 export const Dashboard = () => {
-  const { user, signOut } = useAuth();
+  const { user, userPreferences, signOut } = useAuth();
   const { showToast } = useToast();
   const [courses, setCourses] = useState<CourseWithProgress[]>([]);
   const [loading, setLoading] = useState(true);
@@ -21,6 +22,7 @@ export const Dashboard = () => {
   const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [courseToDelete, setCourseToDelete] = useState<CourseWithProgress | null>(null);
+  const [showProfile, setShowProfile] = useState(false);
 
   const fetchCourses = async () => {
     if (!user) return;
@@ -105,8 +107,23 @@ export const Dashboard = () => {
             <span className="text-2xl font-bold text-white">Semestra</span>
           </div>
 
-          <div className="flex items-center gap-4">
-            <span className="text-sm text-slate-300">{user?.email}</span>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setShowProfile(true)}
+              className="flex items-center gap-3 px-4 py-2 bg-white/5 hover:bg-white/10 rounded-xl transition-all group"
+            >
+              <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-sm font-bold">
+                {userPreferences?.display_name?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || 'U'}
+              </div>
+              <div className="hidden sm:block text-left">
+                <p className="text-sm font-medium text-white group-hover:text-blue-400 transition-colors">
+                  {userPreferences?.display_name || 'User'}
+                </p>
+                {userPreferences?.username && (
+                  <p className="text-xs text-slate-400">@{userPreferences.username}</p>
+                )}
+              </div>
+            </button>
             <button
               onClick={() => signOut()}
               className="p-2 hover:bg-white/10 rounded-lg transition-colors"
@@ -249,6 +266,9 @@ export const Dashboard = () => {
             onCancel={() => setCourseToDelete(null)}
             loading={deleteLoading}
           />
+        )}
+        {showProfile && (
+          <ProfilePanel onClose={() => setShowProfile(false)} />
         )}
       </AnimatePresence>
     </div>

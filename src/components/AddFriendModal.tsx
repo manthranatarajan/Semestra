@@ -22,14 +22,19 @@ export const AddFriendModal = ({ onClose }: AddFriendModalProps) => {
 
     setSearching(true);
     try {
+      const searchPattern = `%${searchQuery}%`;
+
       const { data, error } = await supabase
         .from('user_preferences')
         .select('*')
-        .or(`username.ilike.%${searchQuery}%,display_name.ilike.%${searchQuery}%`)
         .neq('user_id', user.id)
+        .or(`username.ilike.${searchPattern},display_name.ilike.${searchPattern}`)
         .limit(10);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Search error:', error);
+        throw error;
+      }
 
       const { data: existingFriendships } = await supabase
         .from('friendships')
@@ -40,6 +45,10 @@ export const AddFriendModal = ({ onClose }: AddFriendModalProps) => {
       const filteredResults = (data || []).filter(u => !existingFriendIds.includes(u.user_id));
 
       setSearchResults(filteredResults);
+
+      if (filteredResults.length === 0) {
+        showToast('No users found', 'info');
+      }
     } catch (error) {
       console.error('Error searching users:', error);
       showToast('Failed to search users', 'error');
