@@ -97,12 +97,12 @@ export const UploadModal = ({ onClose, onSuccess }: UploadModalProps) => {
         className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl border border-white/10 p-8 max-w-lg w-full shadow-2xl"
       >
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-bold text-white">Upload Syllabus</h2>
+          <h2 className="text-2xl font-bold text-black dark:text-white">Upload Syllabus</h2>
           <button
             onClick={onClose}
             className="p-2 hover:bg-white/10 rounded-lg transition-colors"
           >
-            <X className="w-5 h-5 text-slate-400" />
+            <X className="w-5 h-5 text-slate-600 dark:text-slate-400" />
           </button>
         </div>
 
@@ -123,22 +123,22 @@ export const UploadModal = ({ onClose, onSuccess }: UploadModalProps) => {
               {file ? (
                 <div className="flex flex-col items-center gap-3">
                   <FileText className="w-12 h-12 text-blue-400" />
-                  <p className="text-white font-medium">{file.name}</p>
-                  <p className="text-sm text-slate-400">
+                  <p className="text-black dark:text-white font-medium">{file.name}</p>
+                  <p className="text-sm text-slate-600 dark:text-slate-400">
                     {(file.size / 1024 / 1024).toFixed(2)} MB
                   </p>
                 </div>
               ) : (
                 <div className="flex flex-col items-center gap-3">
-                  <Upload className="w-12 h-12 text-slate-400" />
-                  <p className="text-white font-medium">Drop PDF here or click to browse</p>
-                  <p className="text-sm text-slate-400">Maximum file size: 10MB</p>
+                  <Upload className="w-12 h-12 text-slate-600 dark:text-slate-400" />
+                  <p className="text-black dark:text-white font-medium">Drop PDF here or click to browse</p>
+                  <p className="text-sm text-slate-600 dark:text-slate-400">Maximum file size: 10MB</p>
                 </div>
               )}
             </div>
 
             {error && (
-              <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl">
+                <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl">
                 <p className="text-red-400 text-sm">{error}</p>
               </div>
             )}
@@ -146,7 +146,7 @@ export const UploadModal = ({ onClose, onSuccess }: UploadModalProps) => {
             {uploading && (
               <div className="space-y-3">
                 <div className="flex items-center justify-between text-sm">
-                  <span className="text-slate-300">Parsing with Smart AI</span>
+                  <span className="text-slate-700 dark:text-slate-300">Parsing with Smart AI</span>
                   <span className="text-blue-400">{progress}%</span>
                 </div>
                 <div className="h-2 bg-white/10 rounded-full overflow-hidden">
@@ -157,7 +157,7 @@ export const UploadModal = ({ onClose, onSuccess }: UploadModalProps) => {
                     className="h-full bg-gradient-to-r from-blue-500 to-purple-600"
                   />
                 </div>
-                <div className="flex items-center gap-2 text-sm text-slate-400">
+                <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
                   <Loader className="w-4 h-4 animate-spin" />
                   <span>Extracting assignments, exams, and deadlines...</span>
                 </div>
@@ -167,7 +167,7 @@ export const UploadModal = ({ onClose, onSuccess }: UploadModalProps) => {
             <div className="flex gap-3">
               <button
                 onClick={onClose}
-                className="flex-1 px-6 py-3 bg-white/5 hover:bg-white/10 rounded-xl font-semibold text-white transition-all"
+                className="flex-1 px-6 py-3 bg-white/5 hover:bg-white/10 rounded-xl font-semibold text-black dark:text-white transition-all"
               >
                 Cancel
               </button>

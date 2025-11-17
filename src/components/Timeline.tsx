@@ -235,8 +235,8 @@ export const Timeline = ({ assignments, exams, colorTheme, courseId, onRefresh }
   if (items.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-20">
-        <Calendar className="w-16 h-16 text-slate-600 mb-4" />
-        <p className="text-slate-400">No assignments or exams found</p>
+        <Calendar className="w-16 h-16 text-slate-700 dark:text-slate-400 mb-4" />
+        <p className="text-slate-700 dark:text-slate-400">No assignments or exams found</p>
       </div>
     );
   }
@@ -244,7 +244,7 @@ export const Timeline = ({ assignments, exams, colorTheme, courseId, onRefresh }
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold text-white">Course Timeline</h2>
+        <h2 className="text-2xl font-bold text-black dark:text-white">Course Timeline</h2>
         <div className="flex items-center gap-4">
           <button
             onClick={() => setShowAddModal(true)}
@@ -257,15 +257,15 @@ export const Timeline = ({ assignments, exams, colorTheme, courseId, onRefresh }
           <div className="flex items-center gap-4 text-sm">
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 rounded-full bg-blue-500" />
-              <span className="text-slate-300">Assignment</span>
+              <span className="text-slate-700 dark:text-slate-300">Assignment</span>
             </div>
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 rounded-full bg-orange-500" />
-              <span className="text-slate-300">Exam</span>
+              <span className="text-slate-700 dark:text-slate-300">Exam</span>
             </div>
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 rounded-full bg-red-500" />
-              <span className="text-slate-300">Final</span>
+              <span className="text-slate-700 dark:text-slate-300">Final</span>
             </div>
           </div>
         </div>
@@ -321,26 +321,26 @@ export const Timeline = ({ assignments, exams, colorTheme, courseId, onRefresh }
                     {editingId === item.id ? (
                       <div className="space-y-4">
                         <div>
-                          <label className="block text-sm font-medium text-slate-300 mb-2">
+                          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                             Title
                           </label>
                           <input
                             type="text"
                             value={editTitle}
                             onChange={(e) => setEditTitle(e.target.value)}
-                            className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white"
+                            className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-black dark:text-white"
                             autoFocus
                           />
                         </div>
                         <div>
-                          <label className="block text-sm font-medium text-slate-300 mb-2">
+                          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                             Due Date
                           </label>
                           <input
                             type="date"
                             value={editDate}
                             onChange={(e) => setEditDate(e.target.value)}
-                            className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white"
+                            className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-black dark:text-white"
                           />
                         </div>
                         <div className="flex gap-2">
@@ -366,14 +366,14 @@ export const Timeline = ({ assignments, exams, colorTheme, courseId, onRefresh }
                           <div className="flex-1 cursor-pointer" onClick={() => toggleComplete(item)}>
                             <h3
                               className={`text-lg font-semibold mb-1 ${
-                                item.completed
-                                  ? 'text-green-400 line-through'
-                                  : 'text-white'
+                                  item.completed
+                                    ? 'text-green-400 line-through'
+                                    : 'text-black dark:text-white'
                               }`}
                             >
                               {item.title}
                             </h3>
-                            <p className="text-sm text-slate-400">
+                            <p className="text-sm text-slate-700 dark:text-slate-400">
                               {getTypeLabel(item.type, item.examType)}
                             </p>
                           </div>
@@ -410,7 +410,7 @@ export const Timeline = ({ assignments, exams, colorTheme, courseId, onRefresh }
                           </div>
                         </div>
 
-                        <div className="flex items-center gap-4 text-sm text-slate-300 cursor-pointer" onClick={() => toggleComplete(item)}>
+                        <div className="flex items-center gap-4 text-sm text-slate-700 dark:text-slate-300 cursor-pointer" onClick={() => toggleComplete(item)}>
                           <div className="flex items-center gap-2">
                             <Calendar className="w-4 h-4" />
                             <span>{format(parseISO(item.date), 'MMM d, yyyy')}</span>
@@ -450,22 +450,22 @@ export const Timeline = ({ assignments, exams, colorTheme, courseId, onRefresh }
               className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl border border-white/10 p-6 max-w-md w-full"
             >
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-xl font-bold text-white">Add Item to Timeline</h3>
+                <h3 className="text-xl font-bold text-black dark:text-white">Add Item to Timeline</h3>
                 <button
                   onClick={() => setShowAddModal(false)}
                   className="p-1 hover:bg-white/10 rounded-lg transition-colors"
                 >
-                  <X className="w-5 h-5 text-slate-400" />
+                  <X className="w-5 h-5 text-slate-600 dark:text-slate-400" />
                 </button>
               </div>
 
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                     Type
                   </label>
                   <div className="grid grid-cols-2 gap-3">
-                    <button
+                      <button
                       onClick={() => setAddType('assignment')}
                       className={`p-3 rounded-lg border-2 transition-all ${
                         addType === 'assignment'
@@ -474,7 +474,7 @@ export const Timeline = ({ assignments, exams, colorTheme, courseId, onRefresh }
                       }`}
                     >
                       <Clock className="w-6 h-6 text-blue-400 mx-auto mb-1" />
-                      <p className="text-white text-sm">Assignment</p>
+                      <p className="text-black dark:text-white text-sm">Assignment</p>
                     </button>
                     <button
                       onClick={() => setAddType('exam')}
@@ -485,13 +485,13 @@ export const Timeline = ({ assignments, exams, colorTheme, courseId, onRefresh }
                       }`}
                     >
                       <Award className="w-6 h-6 text-orange-400 mx-auto mb-1" />
-                      <p className="text-white text-sm">Exam</p>
+                      <p className="text-black dark:text-white text-sm">Exam</p>
                     </button>
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                     Title
                   </label>
                   <input
@@ -499,24 +499,24 @@ export const Timeline = ({ assignments, exams, colorTheme, courseId, onRefresh }
                     value={addTitle}
                     onChange={(e) => setAddTitle(e.target.value)}
                     placeholder="e.g., Final Project"
-                    className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white placeholder-slate-500"
+                    className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-black dark:text-white placeholder-slate-500 dark:placeholder-slate-400"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                     {addType === 'assignment' ? 'Due Date' : 'Exam Date'}
                   </label>
                   <input
                     type="date"
                     value={addDate}
                     onChange={(e) => setAddDate(e.target.value)}
-                    className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white"
+                    className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-black dark:text-white"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                     Weight (%)
                   </label>
                   <input
@@ -526,7 +526,7 @@ export const Timeline = ({ assignments, exams, colorTheme, courseId, onRefresh }
                     min="0"
                     max="100"
                     placeholder="10"
-                    className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white placeholder-slate-500"
+                    className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-black dark:text-white placeholder-slate-500 dark:placeholder-slate-400"
                   />
                 </div>
               </div>
@@ -535,7 +535,7 @@ export const Timeline = ({ assignments, exams, colorTheme, courseId, onRefresh }
                 <button
                   onClick={() => setShowAddModal(false)}
                   disabled={saving}
-                  className="flex-1 px-4 py-3 bg-white/5 hover:bg-white/10 rounded-xl font-medium text-white transition-all disabled:opacity-50"
+                  className="flex-1 px-4 py-3 bg-white/5 hover:bg-white/10 rounded-xl font-medium text-black dark:text-white transition-all disabled:opacity-50"
                 >
                   Cancel
                 </button>

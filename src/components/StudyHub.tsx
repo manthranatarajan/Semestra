@@ -107,7 +107,7 @@ export const StudyHub = ({ courseId }: StudyHubProps) => {
             <div className="p-3 bg-purple-500/20 rounded-xl">
               <Clock className="w-6 h-6 text-purple-400" />
             </div>
-            <h2 className="text-2xl font-bold text-white">Focus Timer</h2>
+            <h2 className="text-2xl font-bold text-black dark:text-white">Focus Timer</h2>
           </div>
 
           <div className="flex flex-col items-center">
@@ -141,7 +141,7 @@ export const StudyHub = ({ courseId }: StudyHubProps) => {
                 </defs>
               </svg>
               <div className="absolute inset-0 flex items-center justify-center">
-                <span className="text-5xl font-bold text-white">
+                <span className="text-5xl font-bold text-black dark:text-white">
                   {String(minutes).padStart(2, '0')}:{String(seconds).padStart(2, '0')}
                 </span>
               </div>
@@ -154,7 +154,7 @@ export const StudyHub = ({ courseId }: StudyHubProps) => {
               >
                 -5
               </button>
-              <span className="text-white font-semibold">{focusMinutes} min</span>
+              <span className="text-black dark:text-white font-semibold">{focusMinutes} min</span>
               <button
                 onClick={() => setFocusMinutes(Math.min(60, focusMinutes + 5))}
                 className="px-4 py-2 bg-white/5 hover:bg-white/10 rounded-lg text-white transition-colors"
@@ -182,7 +182,7 @@ export const StudyHub = ({ courseId }: StudyHubProps) => {
             <div className="p-3 bg-blue-500/20 rounded-xl">
               <Lightbulb className="w-6 h-6 text-blue-400" />
             </div>
-            <h2 className="text-2xl font-bold text-white">Study Tips</h2>
+            <h2 className="text-2xl font-bold text-black dark:text-white">Study Tips</h2>
           </div>
 
           <div className="space-y-4">
@@ -198,8 +198,8 @@ export const StudyHub = ({ courseId }: StudyHubProps) => {
                   <tip.icon className="w-5 h-5 text-blue-400" />
                 </div>
                 <div className="flex-1">
-                  <h3 className="font-semibold text-white mb-1">{tip.title}</h3>
-                  <p className="text-sm text-slate-300">{tip.tip}</p>
+                  <h3 className="font-semibold text-black dark:text-white mb-1">{tip.title}</h3>
+                  <p className="text-sm text-slate-700 dark:text-slate-300">{tip.tip}</p>
                 </div>
               </motion.div>
             ))}
@@ -217,7 +217,7 @@ export const StudyHub = ({ courseId }: StudyHubProps) => {
           <div className="p-3 bg-green-500/20 rounded-xl">
             <Lightbulb className="w-6 h-6 text-green-400" />
           </div>
-          <h2 className="text-2xl font-bold text-white">Study Notes & Ideas</h2>
+          <h2 className="text-2xl font-bold text-black dark:text-white">Study Notes & Ideas</h2>
         </div>
 
         <div className="mb-6">
@@ -228,7 +228,7 @@ export const StudyHub = ({ courseId }: StudyHubProps) => {
               onChange={(e) => setNewNote(e.target.value)}
               onKeyPress={(e) => e.key === 'Enter' && addNote()}
               placeholder="Add a note, idea, or reminder..."
-              className="flex-1 px-4 py-3 bg-white/5 border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 text-white placeholder-slate-400"
+              className="flex-1 px-4 py-3 bg-white/5 border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 text-black dark:text-white placeholder-slate-500 dark:placeholder-slate-400"
             />
             <button
               onClick={addNote}
@@ -243,14 +243,14 @@ export const StudyHub = ({ courseId }: StudyHubProps) => {
         <div className="space-y-3">
           {notes.length > 0 ? (
             notes.map((note, index) => (
-              <motion.div
+                <motion.div
                 key={note.id}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.05 }}
                 className="flex items-center justify-between p-4 bg-white/5 rounded-xl hover:bg-white/10 transition-colors group"
               >
-                <p className="text-white flex-1">{note.content}</p>
+                <p className="text-black dark:text-white flex-1">{note.content}</p>
                 <button
                   onClick={() => deleteNote(note.id)}
                   className="opacity-0 group-hover:opacity-100 p-2 hover:bg-red-500/20 rounded-lg transition-all"
@@ -260,7 +260,7 @@ export const StudyHub = ({ courseId }: StudyHubProps) => {
               </motion.div>
             ))
           ) : (
-            <p className="text-slate-400 text-center py-8">
+            <p className="text-slate-700 dark:text-slate-400 text-center py-8">
               No notes yet. Add your first study note or idea above!
             </p>
           )}

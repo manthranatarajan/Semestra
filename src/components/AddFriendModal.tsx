@@ -115,25 +115,25 @@ export const AddFriendModal = ({ onClose }: AddFriendModalProps) => {
         className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl border border-white/10 p-6 max-w-md w-full max-h-[600px] flex flex-col"
       >
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-xl font-bold text-white">Add Friends</h3>
+          <h3 className="text-xl font-bold text-black dark:text-white">Add Friends</h3>
           <button
             onClick={onClose}
             className="p-1 hover:bg-white/10 rounded-lg transition-colors"
           >
-            <X className="w-5 h-5 text-slate-400" />
+            <X className="w-5 h-5 text-slate-600 dark:text-slate-400" />
           </button>
         </div>
 
         <div className="mb-4">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-600 dark:text-slate-400" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
               placeholder="Search by username or display name..."
-              className="w-full pl-10 pr-4 py-3 bg-white/5 border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-white placeholder-slate-400"
+              className="w-full pl-10 pr-4 py-3 bg-white/5 border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-black dark:text-white placeholder-slate-500 dark:placeholder-slate-400"
             />
           </div>
           <button
@@ -148,7 +148,7 @@ export const AddFriendModal = ({ onClose }: AddFriendModalProps) => {
         <div className="flex-1 overflow-y-auto space-y-3">
           {searchResults.length === 0 && searchQuery && !searching && (
             <div className="text-center py-12">
-              <p className="text-slate-400">No users found</p>
+              <p className="text-slate-700 dark:text-slate-400">No users found</p>
             </div>
           )}
 
@@ -163,9 +163,9 @@ export const AddFriendModal = ({ onClose }: AddFriendModalProps) => {
                 {getInitials(result.display_name || 'User')}
               </div>
               <div className="flex-1">
-                <h4 className="font-semibold text-white">{result.display_name || 'Anonymous'}</h4>
+                <h4 className="font-semibold text-black dark:text-white">{result.display_name || 'Anonymous'}</h4>
                 {result.username && (
-                  <p className="text-sm text-slate-400">@{result.username}</p>
+                  <p className="text-sm text-slate-600 dark:text-slate-400">@{result.username}</p>
                 )}
               </div>
               <button
