@@ -4,8 +4,7 @@ import pdf from 'npm:pdf-parse@1.1.1';
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-  // include both Apikey/apikey casing to satisfy preflight checks
-  'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Client-Info, Apikey, apikey',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Client-Info, Apikey',
 };
 
 interface ParsedAssignment {
@@ -265,7 +264,7 @@ Your task is to read the following syllabus text and output ONLY a single valid 
 - Be deterministic: follow the schema precisely, even if information is missing.
 - Use "null" for missing values, not empty strings.
 - Always use date format **YYYY-MM-DD** for every date field.
-- Extract *all* assignments, exams, projects, quizzes, labs, and important dates — don’t skip any even if uncertain.
+- Extract *all* assignments, exams, projects, quizzes, labs, and important dates — don't skip any even if uncertain.
 - If a deadline repeats across multiple weeks, list only the first unique instance.
 - For grade weights, ensure all numeric percentages sum approximately to 100 when possible.
 - If multiple grading categories exist (like "Design Project" or "Participation"), normalize them into a concise key (e.g., "Projects", "Participation").
@@ -306,11 +305,11 @@ Your task is to read the following syllabus text and output ONLY a single valid 
 }
 
 ### 📚 EXTRACTION HINTS
-- Assignments often appear as “HW”, “Homework”, “Project”, “DP”, “Assignment”, “Deliverable”.
-- Exams may appear as “Exam I”, “Exam II”, “Midterm”, “Final Exam”.
+- Assignments often appear as "HW", "Homework", "Project", "DP", "Assignment", "Deliverable".
+- Exams may appear as "Exam I", "Exam II", "Midterm", "Final Exam".
 - Dates can appear in many formats (8/25, Sept 10, Dec 11, 10/4/2025) — always convert them to ISO (YYYY-MM-DD).
-- Grade weights are typically listed in a section labeled “Grading Policy” or “Grading Scale”.
-- Include even small components like “Participation” or “Attendance” if percentages are given.
+- Grade weights are typically listed in a section labeled "Grading Policy" or "Grading Scale".
+- Include even small components like "Participation" or "Attendance" if percentages are given.
 - Use your best judgment to differentiate assignments (ongoing tasks) from exams (tests).
 - Preserve ordering if the syllabus is chronological (by week).
 
