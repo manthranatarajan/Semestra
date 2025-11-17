@@ -7,28 +7,173 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Client-Info, Apikey',
 };
 
+interface ParsedAssignment {
+  title: string;
+  dueDate: string | null;
+  weight: number | null;
+  type: string;
+}
+
+interface ParsedExam {
+  title: string;
+  date: string | null;
+  weight: number | null;
+}
+
 interface ParsedSyllabus {
   courseName: string;
   instructor: string;
   semester: string;
-  assignments: Array<{
-    title: string;
-    dueDate: string;
-    weight: string;
-    type: string;
-  }>;
-  exams: Array<{
-    title: string;
-    date: string;
-    weight: string;
-  }>;
+  assignments: ParsedAssignment[];
+  exams: ParsedExam[];
   gradeWeights: Record<string, number>;
   meetingTimes: string;
   location: string;
-  importantDates: Array<{
-    event: string;
-    date: string;
-  }>;
+  importantDates: Array<{ event: string; date: string }>;
+}
+
+async function computeSHA256(data: Uint8Array): Promise<string> {
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+function normalizeDate(dateStr: string): string | null {
+  const cleaned = dateStr.trim();
+
+  if (/^\d{4}-\d{2}-\d{2}$/.test(cleaned)) {
+    return cleaned;
+  }
+
+  const slashMatch = cleaned.match(/^(\d{1,2})\/(\d{1,2})(?:\/(\d{2,4}))?$/);
+  if (slashMatch) {
+    const [, month, day, year] = slashMatch;
+    const fullYear = year ? (year.length === 2 ? `20${year}` : year) : '2024';
+    return `${fullYear}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+  }
+
+  const monthNames: Record<string, string> = {
+    jan: '01', feb: '02', mar: '03', apr: '04', may: '05', jun: '06',
+    jul: '07', aug: '08', sep: '09', oct: '10', nov: '11', dec: '12'
+  };
+
+  const textMatch = cleaned.match(/^(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\w*\s+(\d{1,2})(?:,?\s+(\d{4}))?$/i);
+  if (textMatch) {
+    const [, month, day, year] = textMatch;
+    const monthNum = monthNames[month.toLowerCase().substring(0, 3)];
+    const fullYear = year || '2024';
+    return `${fullYear}-${monthNum}-${day.padStart(2, '0')}`;
+  }
+
+  return null;
+}
+
+function regexExtractor(text: string): Partial<ParsedSyllabus> {
+  const lines = text.split('\n').map(l => l.trim()).filter(l => l);
+  const assignments: ParsedAssignment[] = [];
+  const exams: ParsedExam[] = [];
+  const importantDates: Array<{ event: string; date: string }> = [];
+
+  const datePattern = /\b(\d{1,2})\/(\d{1,2})(?:\/(\d{2,4}))?\b|\b(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\w*\s+(\d{1,2})(?:,?\s+(\d{4}))?\b/gi;
+  const weightPattern = /(\d+(?:\.\d+)?)%/;
+
+  for (const line of lines) {
+    const lowerLine = line.toLowerCase();
+    const dateMatches = [...line.matchAll(datePattern)];
+    const weightMatch = line.match(weightPattern);
+
+    for (const dateMatch of dateMatches) {
+      const normalizedDate = normalizeDate(dateMatch[0]);
+      if (!normalizedDate) continue;
+
+      const weight = weightMatch ? parseFloat(weightMatch[1]) / 100 : null;
+
+      if (lowerLine.match(/quiz(?:zes)?/i)) {
+        assignments.push({
+          title: line.substring(0, 80).trim(),
+          dueDate: normalizedDate,
+          weight,
+          type: 'quiz',
+        });
+      } else if (lowerLine.match(/homework|hw\s|assignment|problem\s+set|ps\d|project|lab/i)) {
+        const type = lowerLine.match(/project/i) ? 'project' :
+                     lowerLine.match(/lab/i) ? 'lab' :
+                     lowerLine.match(/problem\s+set|ps\d/i) ? 'problem set' : 'homework';
+        assignments.push({
+          title: line.substring(0, 80).trim(),
+          dueDate: normalizedDate,
+          weight,
+          type,
+        });
+      } else if (lowerLine.match(/exam|midterm|final|test/i)) {
+        exams.push({
+          title: line.substring(0, 80).trim(),
+          date: normalizedDate,
+          weight,
+        });
+      } else if (lowerLine.match(/due|deadline|drop|break|holiday/i)) {
+        importantDates.push({
+          event: line.substring(0, 80).trim(),
+          date: normalizedDate,
+        });
+      }
+    }
+  }
+
+  const gradeWeightLines = lines.filter(l => l.match(/(\d+(?:\.\d+)?)%/) && l.match(/exam|quiz|homework|project|participation|attendance|final|midterm/i));
+  const gradeWeights: Record<string, number> = {};
+
+  for (const line of gradeWeightLines) {
+    const weightMatch = line.match(/(\d+(?:\.\d+)?)%/);
+    if (!weightMatch) continue;
+
+    const weight = parseFloat(weightMatch[1]) / 100;
+    const lowerLine = line.toLowerCase();
+
+    if (lowerLine.includes('exam')) gradeWeights['Exams'] = weight;
+    else if (lowerLine.includes('quiz')) gradeWeights['Quizzes'] = weight;
+    else if (lowerLine.includes('homework') || lowerLine.includes('assignment')) gradeWeights['Homework'] = weight;
+    else if (lowerLine.includes('project')) gradeWeights['Projects'] = weight;
+    else if (lowerLine.includes('participation') || lowerLine.includes('attendance')) gradeWeights['Participation'] = weight;
+  }
+
+  return { assignments, exams, gradeWeights, importantDates };
+}
+
+function mergeAIAndRegex(aiResult: ParsedSyllabus, regexResult: Partial<ParsedSyllabus>): ParsedSyllabus {
+  const merged = { ...aiResult };
+
+  if (regexResult.assignments) {
+    const existingTitles = new Set(aiResult.assignments.map(a => a.title.toLowerCase()));
+    for (const regexAssignment of regexResult.assignments) {
+      if (!existingTitles.has(regexAssignment.title.toLowerCase())) {
+        merged.assignments.push(regexAssignment);
+      }
+    }
+  }
+
+  if (regexResult.exams) {
+    const existingTitles = new Set(aiResult.exams.map(e => e.title.toLowerCase()));
+    for (const regexExam of regexResult.exams) {
+      if (!existingTitles.has(regexExam.title.toLowerCase())) {
+        merged.exams.push(regexExam);
+      }
+    }
+  }
+
+  if (regexResult.gradeWeights) {
+    merged.gradeWeights = { ...merged.gradeWeights, ...regexResult.gradeWeights };
+  }
+
+  const totalWeight = Object.values(merged.gradeWeights).reduce((sum, w) => sum + w, 0);
+  if (totalWeight > 0 && Math.abs(totalWeight - 1.0) > 0.15) {
+    const scale = 1.0 / totalWeight;
+    for (const key in merged.gradeWeights) {
+      merged.gradeWeights[key] = Math.round(merged.gradeWeights[key] * scale * 100) / 100;
+    }
+  }
+
+  return merged;
 }
 
 Deno.serve(async (req: Request) => {
@@ -42,9 +187,7 @@ Deno.serve(async (req: Request) => {
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseKey = Deno.env.get('SUPABASE_ANON_KEY')!;
-    const openaiKey = Deno.env.get('OPENAI_API_KEY');
     const geminiKey = Deno.env.get('GEMINI_API_KEY');
-    const geminiUrl = Deno.env.get('GEMINI_API_URL');
 
     const authHeader = req.headers.get('Authorization')!;
     const supabase = createClient(supabaseUrl, supabaseKey, {
@@ -70,119 +213,76 @@ Deno.serve(async (req: Request) => {
 
     const arrayBuffer = await file.arrayBuffer();
     const buffer = new Uint8Array(arrayBuffer);
-    const data = await pdf(buffer);
-    const extractedText = data.text;
+    const fileHash = await computeSHA256(buffer);
 
-    let parsedData: ParsedSyllabus;
+    const { data: existingCourse } = await supabase
+      .from('courses')
+      .select('id, course_name, parsed_json')
+      .eq('file_sha256', fileHash)
+      .eq('user_id', user.id)
+      .maybeSingle();
 
-    const prompt = `You are an expert at parsing college syllabuses. Extract ALL structured information from the following syllabus text and return ONLY valid JSON with no markdown formatting or code blocks.
-
-CRITICAL PARSING REQUIREMENTS:
-1. Extract EVERY assignment mentioned, including:
-   - Weekly quizzes (every week/bi-weekly quizzes)
-   - Homework assignments
-   - Projects
-   - Labs
-   - Problem sets
-   - Discussion posts
-   - Any recurring assignments
-
-2. For recurring items (e.g., "Weekly Quiz every Monday"):
-   - Create individual entries for each occurrence
-   - Infer dates based on day of week and semester schedule
-   - Label clearly (e.g., "Quiz 1", "Quiz 2", etc.)
-
-3. Parse ALL types of assessments:
-   - Quizzes (in-class, online, weekly)
-   - Homework/Problem Sets
-   - Projects
-   - Labs
-   - Exams (midterms, finals, practicals)
-   - Presentations
-   - Papers
-
-4. Extract precise information:
-   - Course name, instructor, semester
-   - Meeting times and location
-   - ALL due dates and exam dates
-   - Individual weights for each item
-   - Category weights (Exams: X%, Homework: Y%, Quizzes: Z%)
-
-For dates: Use YYYY-MM-DD format. If year is ambiguous, infer from context or use 2024.
-For weights: Convert percentages to decimals (e.g., 20% = 0.2).
-For recurring items: Generate individual entries with sequential numbering.
-
-Return this exact JSON structure:
-{
-  "courseName": "",
-  "instructor": "",
-  "semester": "",
-  "assignments": [{"title": "", "dueDate": "", "weight": "", "type": ""}],
-  "exams": [{"title": "", "date": "", "weight": ""}],
-  "gradeWeights": {"Exams": 0.4, "Homework": 0.2, "Quizzes": 0.1},
-  "meetingTimes": "",
-  "location": "",
-  "importantDates": [{"event": "", "date": ""}]
-}
-
-Syllabus text:
-${extractedText}`;
-
-    if (geminiKey && geminiUrl) {
-      const geminiResponse = await fetch(`${geminiUrl}?key=${geminiKey}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          contents: [{
-            parts: [{
-              text: prompt
-            }]
-          }],
-          generationConfig: {
-            temperature: 0.1,
-            topK: 1,
-            topP: 0.8,
-          }
-        }),
+    if (existingCourse && existingCourse.parsed_json) {
+      return new Response(JSON.stringify({
+        success: true,
+        courseId: existingCourse.id,
+        courseName: existingCourse.course_name,
+        cached: true
+      }), {
+        status: 200,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
-
-      if (!geminiResponse.ok) {
-        const errorText = await geminiResponse.text();
-        console.error('Gemini API error:', errorText);
-        throw new Error('Gemini API request failed');
-      }
-
-      const geminiData = await geminiResponse.json();
-      const geminiText = geminiData.candidates?.[0]?.content?.parts?.[0]?.text || '';
-      const jsonMatch = geminiText.match(/\{[\s\S]*\}/);
-      parsedData = JSON.parse(jsonMatch ? jsonMatch[0] : geminiText);
-    } else if (openaiKey) {
-      const openaiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${openaiKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          model: 'gpt-4-turbo-preview',
-          messages: [{ role: 'user', content: prompt }],
-          temperature: 0.1,
-        }),
-      });
-
-      if (!openaiResponse.ok) {
-        throw new Error('OpenAI API request failed');
-      }
-
-      const openaiData = await openaiResponse.json();
-      const content = openaiData.choices[0].message.content.trim();
-      const jsonMatch = content.match(/\{[\s\S]*\}/);
-      parsedData = JSON.parse(jsonMatch ? jsonMatch[0] : content);
-    } else {
-      parsedData = fallbackParse(extractedText);
     }
+
+    const pdfData = await pdf(buffer);
+    const extractedText = pdfData.text;
+
+    let parsedData: ParsedSyllabus | null = null;
+
+    if (geminiKey) {
+      const prompt = `Extract structured information from this syllabus and return ONLY valid JSON matching this exact schema. Use YYYY-MM-DD format for all dates.\n\nSchema:\n{\n  \"courseName\": \"string\",\n  \"instructor\": \"string\",\n  \"semester\": \"string\",\n  \"assignments\": [{\"title\": \"string\", \"dueDate\": \"YYYY-MM-DD or null\", \"weight\": number or null, \"type\": \"assignment|exam|quiz|project|lab\"}],\n  \"exams\": [{\"title\": \"string\", \"date\": \"YYYY-MM-DD or null\", \"weight\": number or null}],\n  \"gradeWeights\": {\"Category\": number},\n  \"meetingTimes\": \"string\",\n  \"location\": \"string\",\n  \"importantDates\": [{\"event\": \"string\", \"date\": \"YYYY-MM-DD\"}]\n}\n\nSyllabus:\n${extractedText}`;
+
+      try {
+        const geminiResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiKey}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: prompt }] }],
+            generationConfig: {
+              temperature: 0,
+              responseMimeType: 'application/json',
+            }
+          }),
+        });
+
+        if (geminiResponse.ok) {
+          const geminiData = await geminiResponse.json();
+          const geminiText = geminiData.candidates?.[0]?.content?.parts?.[0]?.text || '';
+          if (geminiText) {
+            parsedData = JSON.parse(geminiText);
+          }
+        }
+      } catch (e) {
+        console.error('Gemini parsing failed:', e);
+      }
+    }
+
+    if (!parsedData) {
+      parsedData = {
+        courseName: 'Untitled Course',
+        instructor: '',
+        semester: '',
+        assignments: [],
+        exams: [],
+        gradeWeights: {},
+        meetingTimes: '',
+        location: '',
+        importantDates: [],
+      };
+    }
+
+    const regexResult = regexExtractor(extractedText);
+    parsedData = mergeAIAndRegex(parsedData, regexResult);
 
     const colorThemes = ['#3b82f6', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981', '#06b6d4'];
     const randomColor = colorThemes[Math.floor(Math.random() * colorThemes.length)];
@@ -198,6 +298,8 @@ ${extractedText}`;
         location: parsedData.location || '',
         color_theme: randomColor,
         raw_text: extractedText,
+        file_sha256: fileHash,
+        parsed_json: parsedData,
       })
       .select()
       .single();
@@ -210,8 +312,8 @@ ${extractedText}`;
       const assignments = parsedData.assignments.map((a) => ({
         course_id: courseId,
         title: a.title,
-        due_date: a.dueDate || null,
-        weight: parseFloat(a.weight) || 0,
+        due_date: a.dueDate,
+        weight: a.weight || 0,
         type: a.type || 'homework',
       }));
       await supabase.from('assignments').insert(assignments);
@@ -221,8 +323,8 @@ ${extractedText}`;
       const exams = parsedData.exams.map((e) => ({
         course_id: courseId,
         title: e.title,
-        exam_date: e.date || null,
-        weight: parseFloat(e.weight) || 0,
+        exam_date: e.date,
+        weight: e.weight || 0,
         type: e.title.toLowerCase().includes('final') ? 'final' : 'midterm',
       }));
       await supabase.from('exams').insert(exams);
@@ -238,101 +340,32 @@ ${extractedText}`;
     }
 
     if (parsedData.importantDates && parsedData.importantDates.length > 0) {
-      const dates = parsedData.importantDates.map((d) => ({
-        course_id: courseId,
-        event: d.event,
-        date: d.date,
-      }));
-      await supabase.from('important_dates').insert(dates);
+      const dates = parsedData.importantDates
+        .filter(d => d.date)
+        .map((d) => ({
+          course_id: courseId,
+          event: d.event,
+          date: d.date,
+        }));
+      if (dates.length > 0) {
+        await supabase.from('important_dates').insert(dates);
+      }
     }
 
-    return new Response(JSON.stringify({ success: true, courseId, courseName: parsedData.courseName }), {
+    return new Response(JSON.stringify({
+      success: true,
+      courseId,
+      courseName: parsedData.courseName,
+      cached: false
+    }), {
       status: 200,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (error) {
     console.error('Error parsing syllabus:', error);
-    return new Response(JSON.stringify({ error: error.message }), {
+    return new Response(JSON.stringify({ error: error.message || 'Unknown error' }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   }
 });
-
-function fallbackParse(text: string): ParsedSyllabus {
-  const lines = text.split('\n').map(l => l.trim()).filter(l => l);
-
-  const courseName = lines.find(l =>
-    l.match(/course|class|subject/i) && !l.match(/schedule|policy/i)
-  ) || 'Untitled Course';
-
-  const instructor = lines.find(l => l.match(/instructor|professor|teacher/i)) || '';
-  const semester = lines.find(l => l.match(/fall|spring|summer|winter|semester/i)) || '';
-
-  const assignments: ParsedSyllabus['assignments'] = [];
-  const exams: ParsedSyllabus['exams'] = [];
-  const importantDates: ParsedSyllabus['importantDates'] = [];
-
-  const datePattern = /\b(\d{1,2})\/(\d{1,2})(?:\/(\d{2,4}))?\b|\b(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\w*\s+(\d{1,2})(?:,?\s+(\d{4}))?\b/i;
-  const weightPattern = /(\d+(?:\.\d+)?)%/;
-
-  for (const line of lines) {
-    const dateMatch = line.match(datePattern);
-    const weightMatch = line.match(weightPattern);
-    const lowerLine = line.toLowerCase();
-
-    if (lowerLine.match(/quiz(?:zes)?|quizz/i) && dateMatch) {
-      assignments.push({
-        title: line.substring(0, 50).trim(),
-        dueDate: dateMatch[0],
-        weight: weightMatch ? (parseFloat(weightMatch[1]) / 100).toString() : '0.02',
-        type: 'quiz',
-      });
-    } else if (lowerLine.match(/homework|hw\s|assignment|problem\s+set|ps\d|project|lab|dp/i) && dateMatch) {
-      const type = lowerLine.match(/project|dp/i) ? 'project' :
-                   lowerLine.match(/lab/i) ? 'lab' :
-                   lowerLine.match(/problem\s+set|ps\d/i) ? 'problem set' : 'homework';
-      assignments.push({
-        title: line.substring(0, 50).trim(),
-        dueDate: dateMatch[0],
-        weight: weightMatch ? (parseFloat(weightMatch[1]) / 100).toString() : '0.05',
-        type,
-      });
-    } else if (lowerLine.match(/exam|midterm|final|test/i) && dateMatch) {
-      exams.push({
-        title: line.substring(0, 50).trim(),
-        date: dateMatch[0],
-        weight: weightMatch ? (parseFloat(weightMatch[1]) / 100).toString() : '0.2',
-      });
-    } else if (dateMatch && lowerLine.match(/due|deadline|submit/i)) {
-      importantDates.push({
-        event: line.substring(0, 50).trim(),
-        date: dateMatch[0],
-      });
-    }
-  }
-
-  const hasQuizzes = assignments.some(a => a.type === 'quiz');
-  const gradeWeights: Record<string, number> = hasQuizzes ? {
-    'Assignments': 0.3,
-    'Quizzes': 0.2,
-    'Exams': 0.4,
-    'Participation': 0.1,
-  } : {
-    'Assignments': 0.3,
-    'Exams': 0.5,
-    'Participation': 0.2,
-  };
-
-  return {
-    courseName: courseName.substring(0, 100),
-    instructor: instructor.substring(0, 100),
-    semester: semester.substring(0, 50),
-    assignments,
-    exams,
-    gradeWeights,
-    meetingTimes: '',
-    location: '',
-    importantDates,
-  };
-}

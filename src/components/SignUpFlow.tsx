@@ -2,7 +2,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabase';
-import { User, GraduationCap, BookOpen, Calendar } from 'lucide-react';
+import { User, GraduationCap, BookOpen, Calendar, Sun, Moon } from 'lucide-react';
 
 interface SignUpFlowProps {
   email: string;
@@ -19,9 +19,10 @@ export const SignUpFlow = ({ email, password, onComplete }: SignUpFlowProps) => 
   const [major, setMajor] = useState('');
   const [shareProgress, setShareProgress] = useState(true);
   const [shareCourses, setShareCourses] = useState(true);
+  const [theme, setTheme] = useState<'light' | 'dark'>('dark');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const { signUp } = useAuth();
+  const { signUp, setTheme: updateTheme } = useAuth();
 
   const handleSignUp = async () => {
     setError('');
@@ -39,13 +40,15 @@ export const SignUpFlow = ({ email, password, onComplete }: SignUpFlowProps) => 
             user_id: user.id,
             display_name: displayName,
             username: username || null,
-            theme: 'dark',
+            theme,
             share_progress: shareProgress,
             share_courses: shareCourses,
             school: school || null,
             grad_year: gradYear ? parseInt(gradYear) : null,
             major: major || null,
           });
+
+        updateTheme(theme);
 
         if (prefError) {
           if (prefError.code === '23505') {
@@ -225,6 +228,38 @@ export const SignUpFlow = ({ email, password, onComplete }: SignUpFlowProps) => 
               exit={{ opacity: 0, x: -20 }}
               className="space-y-4"
             >
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-3">
+                  Theme Preference
+                </label>
+                <div className="grid grid-cols-2 gap-3 mb-4">
+                  <button
+                    type="button"
+                    onClick={() => setTheme('light')}
+                    className={`p-4 rounded-xl border-2 transition-all ${
+                      theme === 'light'
+                        ? 'border-blue-500 bg-blue-500/10'
+                        : 'border-white/10 bg-white/5 hover:border-white/20'
+                    }`}
+                  >
+                    <Sun className="w-6 h-6 text-yellow-400 mx-auto mb-2" />
+                    <p className="text-white font-medium text-sm">Light</p>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setTheme('dark')}
+                    className={`p-4 rounded-xl border-2 transition-all ${
+                      theme === 'dark'
+                        ? 'border-blue-500 bg-blue-500/10'
+                        : 'border-white/10 bg-white/5 hover:border-white/20'
+                    }`}
+                  >
+                    <Moon className="w-6 h-6 text-blue-400 mx-auto mb-2" />
+                    <p className="text-white font-medium text-sm">Dark</p>
+                  </button>
+                </div>
+              </div>
+
               <div className="space-y-3">
                 <label className="flex items-center justify-between p-4 bg-white/5 rounded-xl border border-white/10 cursor-pointer hover:bg-white/10 transition-all">
                   <div>

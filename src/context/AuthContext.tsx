@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState, ReactNode } from 'react
 import { User } from '@supabase/supabase-js';
 import { supabase, UserPreferences } from '../lib/supabase';
 import { testSupabaseConnection } from '../lib/connectionTest';
+import { getInitialTheme, applyTheme } from '../lib/theme';
 
 interface AuthContextType {
   user: User | null;
@@ -20,7 +21,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [userPreferences, setUserPreferences] = useState<UserPreferences | null>(null);
-  const [theme, setThemeState] = useState<'light' | 'dark'>('dark');
+  const [theme, setThemeState] = useState<'light' | 'dark'>(() => getInitialTheme());
   const [loading, setLoading] = useState(true);
 
   const fetchUserPreferences = async (userId: string) => {
@@ -35,6 +36,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (data) {
         setUserPreferences(data);
         setThemeState(data.theme);
+        applyTheme(data.theme);
       }
     } catch (error) {
       console.error('Error fetching user preferences:', error);
@@ -70,7 +72,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           await fetchUserPreferences(session.user.id);
         } else {
           setUserPreferences(null);
-          setThemeState('dark');
+          const savedTheme = getInitialTheme();
+          setThemeState(savedTheme);
+          applyTheme(savedTheme);
         }
       })();
     });
@@ -108,6 +112,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const setTheme = (newTheme: 'light' | 'dark') => {
     setThemeState(newTheme);
+    applyTheme(newTheme);
     if (user) {
       updatePreferences({ theme: newTheme });
     }
