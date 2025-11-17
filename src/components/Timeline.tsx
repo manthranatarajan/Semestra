@@ -35,6 +35,10 @@ export const Timeline = ({ assignments, exams, colorTheme, courseId, onRefresh }
   const [addDate, setAddDate] = useState('');
   const [addWeight, setAddWeight] = useState('10');
   const [saving, setSaving] = useState(false);
+  const typeColors: Record<'assignment' | 'exam', string> = {
+    assignment: 'from-blue-500 to-blue-600',
+    exam: 'from-orange-500 to-orange-600',
+  };
   const [items, setItems] = useState<TimelineItem[]>(() => {
     const assignmentItems: TimelineItem[] = assignments
       .filter((a) => a.due_date)
@@ -542,7 +546,7 @@ export const Timeline = ({ assignments, exams, colorTheme, courseId, onRefresh }
                 <button
                   onClick={handleAddItem}
                   disabled={saving}
-                  className="flex-1 px-4 py-3 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 rounded-xl font-semibold text-white transition-all disabled:opacity-50"
+                  className={`flex-1 px-4 py-3 bg-gradient-to-r ${addType === 'assignment' ? typeColors.assignment : typeColors.exam} hover:brightness-110 rounded-xl font-semibold text-white transition-all disabled:opacity-50`}
                 >
                   {saving ? 'Adding...' : 'Add Item'}
                 </button>

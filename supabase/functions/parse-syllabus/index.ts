@@ -23,13 +23,150 @@ interface ParsedExam {
 interface ParsedSyllabus {
   courseName: string;
   instructor: string;
+  emails?: string[];
+  officeHours?: string;
+  officeLocation?: string;
+  coordinator?: string;
   semester: string;
   assignments: ParsedAssignment[];
   exams: ParsedExam[];
   gradeWeights: Record<string, number>;
+  gradeScheme?: Array<{ component: string; weight: number; notes?: string }>;
   meetingTimes: string;
   location: string;
   importantDates: Array<{ event: string; date: string }>;
+}
+
+// ----------------------------
+// Helpers for structured parsing
+// ----------------------------
+
+function sliceToRelevantSection(text: string): string {
+  const lower = text.toLowerCase();
+  const startIdx = lower.indexOf('instructors and office hours');
+  const endIdx = lower.indexOf('academic integrity');
+  if (startIdx !== -1 && endIdx !== -1 && endIdx > startIdx) {
+    return text.slice(startIdx, endIdx);
+  }
+  const schedIdx = lower.indexOf('tentative schedule');
+  if (startIdx !== -1 && schedIdx !== -1 && schedIdx > startIdx) {
+    return text.slice(startIdx, schedIdx);
+  }
+  return text;
+}
+
+function extractCourseInfo(text: string): {
+  courseName: string | null;
+  semester: string | null;
+  instructor: string | null;
+  emails: string[];
+  officeHours: string | null;
+  officeLocation: string | null;
+  coordinator: string | null;
+} {
+  const courseMatch = text.match(/\b([A-Z]{2,4}\s*\d{3,4}[A-Z]?)\s*[–-]\s*([^\n]+)/);
+  const semesterMatch = text.match(/\b(Fall|Spring|Summer)\s+(\d{4})\b/i);
+  const instructorMatch = text.match(/instructor[s]?:\s*([^\n]+)/i);
+  const coordinatorMatch = text.match(/coordinator[: ]\s*([^\n]+)/i);
+  const officeHoursMatch = text.match(/office hours?:\s*([^\n]+)/i);
+  const officeLocMatch = text.match(/office\s*(location|room|address)?[: ]\s*([^\n]+)/i);
+  const emails = [...text.matchAll(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi)].map(m => m[0]);
+
+  return {
+    courseName: courseMatch ? courseMatch[0].trim() : null,
+    semester: semesterMatch ? semesterMatch[0] : null,
+    instructor: instructorMatch ? instructorMatch[1].trim() : null,
+    emails,
+    officeHours: officeHoursMatch ? officeHoursMatch[1].trim() : null,
+    officeLocation: officeLocMatch ? (officeLocMatch[2] || officeLocMatch[0]).trim() : null,
+    coordinator: coordinatorMatch ? coordinatorMatch[1].trim() : null,
+  };
+}
+
+function normalizeWeightScheme(entries: Array<{ component: string; weight: number; notes?: string }>): Array<{ component: string; weight: number; notes?: string }> {
+  const total = entries.reduce((sum, e) => sum + (e.weight || 0), 0);
+  if (total > 0 && Math.abs(total - 100) > 15) {
+    // scale to 100
+    return entries.map(e => ({ ...e, weight: Math.round((e.weight / total) * 1000) / 10 }));
+  }
+  if (total === 0) {
+    return entries;
+  }
+  // if within 85-115, scale gently
+  return entries.map(e => ({ ...e, weight: Math.round((e.weight / total) * 1000) / 10 }));
+}
+
+function extractGradeScheme(text: string): Array<{ component: string; weight: number; notes?: string }> {
+  const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+  const scheme: Array<{ component: string; weight: number; notes?: string }> = [];
+
+  for (const line of lines) {
+    if (!line.match(/\d{1,3}%/)) continue;
+    const match = line.match(/(?<comp>[A-Za-z0-9\s./()&-]+?)\s*[:\-]?\s*(?<pct>\d{1,3})%/);
+    if (match?.groups?.comp && match.groups.pct) {
+      scheme.push({
+        component: match.groups.comp.trim(),
+        weight: parseFloat(match.groups.pct),
+      });
+    }
+  }
+
+  return normalizeWeightScheme(scheme);
+}
+
+function formatDate(text: string, fallbackYear?: string): string | null {
+  const cleaned = text.trim();
+  const year = fallbackYear || '2025';
+
+  const iso = cleaned.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (iso) return cleaned;
+
+  const slash = cleaned.match(/^(\d{1,2})\/(\d{1,2})(?:\/(\d{2,4}))?/);
+  if (slash) {
+    const [, m, d, y] = slash;
+    const fullYear = y ? (y.length === 2 ? `20${y}` : y) : year;
+    return `${fullYear}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`;
+  }
+
+  const textDate = cleaned.match(/(jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)[a-z]*\.?\s+(\d{1,2})(?:,?\s+(\d{4}))?/i);
+  if (textDate) {
+    const [, mon, day, y] = textDate;
+    const monthNames: Record<string, string> = { jan:'01', feb:'02', mar:'03', apr:'04', may:'05', jun:'06', jul:'07', aug:'08', sep:'09', sept:'09', oct:'10', nov:'11', dec:'12' };
+    const fullYear = y || year;
+    return `${fullYear}-${monthNames[mon.toLowerCase().substring(0,3)]}-${day.padStart(2,'0')}`;
+  }
+  return null;
+}
+
+function extractDatedEvents(text: string, fallbackYear?: string) {
+  const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+  const events: ParsedExam[] = [];
+  const assignments: ParsedAssignment[] = [];
+
+  for (const line of lines) {
+    const dateMatch = line.match(/(\d{1,2}\/\d{1,2}(?:\/\d{2,4})?)|((jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)[a-z]*\.?\s+\d{1,2}(?:,?\s+\d{4})?)/i);
+    if (!dateMatch) continue;
+    const dateStr = dateMatch[0];
+    const normalized = formatDate(dateStr, fallbackYear);
+    if (!normalized) continue;
+    const lower = line.toLowerCase();
+    const weightMatch = line.match(/(\d{1,3})%/);
+    const weight = weightMatch ? parseFloat(weightMatch[1]) / 100 : null;
+
+    if (lower.includes('final')) {
+      events.push({ title: line, date: normalized, weight, type: 'final' as any });
+    } else if (lower.includes('midterm') || lower.includes('exam') || lower.includes('test')) {
+      events.push({ title: line, date: normalized, weight, type: 'midterm' as any });
+    } else if (lower.includes('quiz')) {
+      assignments.push({ title: line, dueDate: normalized, weight, type: 'quiz' });
+    } else if (lower.includes('homework') || lower.includes('assignment') || lower.includes('project') || lower.includes('lab') || lower.includes('hw')) {
+      assignments.push({ title: line, dueDate: normalized, weight, type: 'assignment' });
+    } else if (lower.includes('holiday') || lower.includes('break') || lower.includes('reading day')) {
+      // treat as important date; handled later via importantDates
+    }
+  }
+
+  return { events, assignments };
 }
 
 async function computeSHA256(data: Uint8Array): Promise<string> {
@@ -241,7 +378,8 @@ Deno.serve(async (req: Request) => {
         success: true,
         courseId: existingCourse.id,
         courseName: existingCourse.course_name,
-        cached: true
+        cached: true,
+        needsReview: existingCourse.course_name?.toLowerCase().includes('untitled'),
       }), {
         status: 200,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -250,6 +388,8 @@ Deno.serve(async (req: Request) => {
 
     const pdfData = await pdf(buffer);
     const extractedText = pdfData.text;
+    const scopedText = sliceToRelevantSection(extractedText);
+    const metaFromFull = extractCourseInfo(extractedText);
 
     let parsedData: ParsedSyllabus | null = null;
 
@@ -352,9 +492,14 @@ ${extractedText}`;
         courseName: 'Untitled Course',
         instructor: '',
         semester: '',
+        emails: [],
+        officeHours: '',
+        officeLocation: '',
+        coordinator: '',
         assignments: [],
         exams: [],
         gradeWeights: {},
+        gradeScheme: [],
         meetingTimes: '',
         location: '',
         importantDates: [],
@@ -364,8 +509,51 @@ ${extractedText}`;
     const regexResult = regexExtractor(extractedText);
     parsedData = mergeAIAndRegex(parsedData, regexResult);
 
+    // Heuristic enrichments
+    const courseMeta = extractCourseInfo(scopedText);
+    const fallbackCourseName = courseMeta.courseName || metaFromFull.courseName;
+    const fallbackSemester = courseMeta.semester || metaFromFull.semester;
+    const fallbackInstructor = courseMeta.instructor || metaFromFull.instructor;
+    const fallbackEmails = (courseMeta.emails?.length ? courseMeta.emails : metaFromFull.emails) || [];
+    const fallbackOfficeHours = courseMeta.officeHours || metaFromFull.officeHours;
+    const fallbackOfficeLocation = courseMeta.officeLocation || metaFromFull.officeLocation;
+    const fallbackCoordinator = courseMeta.coordinator || metaFromFull.coordinator;
+
+    if ((!parsedData.courseName || parsedData.courseName.toLowerCase().includes('untitled')) && fallbackCourseName) parsedData.courseName = fallbackCourseName;
+    if (!parsedData.semester && fallbackSemester) parsedData.semester = fallbackSemester;
+    if (!parsedData.instructor && fallbackInstructor) parsedData.instructor = fallbackInstructor;
+    if (!(parsedData as any).emails?.length && fallbackEmails.length) (parsedData as any).emails = fallbackEmails;
+    if (!(parsedData as any).officeHours && fallbackOfficeHours) (parsedData as any).officeHours = fallbackOfficeHours;
+    if (!(parsedData as any).officeLocation && fallbackOfficeLocation) (parsedData as any).officeLocation = fallbackOfficeLocation;
+    if (!(parsedData as any).coordinator && fallbackCoordinator) (parsedData as any).coordinator = fallbackCoordinator;
+
+    const gradeScheme = extractGradeScheme(scopedText);
+    if (gradeScheme.length > 0) {
+      parsedData.gradeScheme = gradeScheme;
+      parsedData.gradeWeights = gradeScheme.reduce((acc, g) => {
+        acc[g.component] = g.weight / 100;
+        return acc;
+      }, {} as Record<string, number>);
+    }
+
+    const semesterYear = (parsedData.semester || courseMeta.semester || '2025').match(/\d{4}/)?.[0];
+    const dated = extractDatedEvents(scopedText, semesterYear);
+    if (dated.assignments.length > 0) {
+      parsedData.assignments = [...parsedData.assignments, ...dated.assignments];
+    }
+    if (dated.events.length > 0) {
+      const asExams: ParsedExam[] = dated.events.map(e => ({
+        title: e.title,
+        date: e.date,
+        weight: e.weight,
+        // keep type info in title; actual type mapped below
+      }));
+      parsedData.exams = [...parsedData.exams, ...asExams];
+    }
+
     const colorThemes = ['#3b82f6', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981', '#06b6d4'];
     const randomColor = colorThemes[Math.floor(Math.random() * colorThemes.length)];
+    const needsReview = !parsedData.courseName || parsedData.courseName.toLowerCase().includes('untitled');
 
     const { data: course, error: courseError } = await supabase
       .from('courses')
@@ -376,6 +564,11 @@ ${extractedText}`;
         semester: parsedData.semester || '',
         meeting_times: parsedData.meetingTimes || '',
         location: parsedData.location || '',
+        instructor_email: (parsedData as any).emails ? ((parsedData as any).emails as string[]).join(', ') : null,
+        office_hours: (parsedData as any).officeHours || null,
+        office_location: (parsedData as any).officeLocation || null,
+        coordinator: (parsedData as any).coordinator || null,
+        grade_scheme_json: parsedData.gradeScheme || null,
         color_theme: randomColor,
         raw_text: extractedText,
         file_sha256: fileHash,
@@ -414,7 +607,15 @@ ${extractedText}`;
       const weights = Object.entries(parsedData.gradeWeights).map(([category, weight]) => ({
         course_id: courseId,
         category,
-        weight: typeof weight === 'number' ? weight : parseFloat(weight as string) || 0,
+        // store as fraction if looks like percentage
+        weight: typeof weight === 'number' && weight > 1 ? weight / 100 : (typeof weight === 'number' ? weight : parseFloat(weight as string) || 0),
+      }));
+      await supabase.from('grade_weights').insert(weights);
+    } else if (parsedData.gradeScheme && parsedData.gradeScheme.length > 0) {
+      const weights = parsedData.gradeScheme.map((g) => ({
+        course_id: courseId,
+        category: g.component,
+        weight: (g.weight || 0) / 100,
       }));
       await supabase.from('grade_weights').insert(weights);
     }
@@ -432,12 +633,16 @@ ${extractedText}`;
       }
     }
 
-    return new Response(JSON.stringify({
-      success: true,
-      courseId,
-      courseName: parsedData.courseName,
-      cached: false
-    }), {
+      return new Response(JSON.stringify({
+        success: true,
+        courseId,
+        courseName: parsedData.courseName,
+        instructor: parsedData.instructor,
+        semester: parsedData.semester,
+        gradeScheme: parsedData.gradeScheme,
+        needsReview,
+        cached: false
+      }), {
       status: 200,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });

@@ -15,6 +15,8 @@ export const UploadModal = ({ onClose, onSuccess }: UploadModalProps) => {
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
+  const [parsedSummary, setParsedSummary] = useState<any | null>(null);
+  const [showSummary, setShowSummary] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -92,12 +94,10 @@ export const UploadModal = ({ onClose, onSuccess }: UploadModalProps) => {
 
       const result = await response.json();
       console.log('Upload successful', result);
+      setParsedSummary(result);
+      setShowSummary(true);
       setProgress(100);
-      setSuccess(true);
-
-      setTimeout(() => {
-        onSuccess();
-      }, 1500);
+      setUploading(false);
     } catch (err: any) {
       console.error('Upload error:', err);
       setError(err?.message ? `Upload failed: ${err.message}` : 'Failed to upload syllabus (network error)');
@@ -114,6 +114,14 @@ export const UploadModal = ({ onClose, onSuccess }: UploadModalProps) => {
       className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
       onClick={onClose}
     >
+      {uploading && (
+        <div className="absolute inset-0 bg-black/40 flex items-center justify-center z-10">
+          <div className="flex items-center gap-3 text-white">
+            <Loader className="w-5 h-5 animate-spin" />
+            <span>Parsing syllabus...</span>
+          </div>
+        </div>
+      )}
       <motion.div
         initial={{ scale: 0.9, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
@@ -131,7 +139,7 @@ export const UploadModal = ({ onClose, onSuccess }: UploadModalProps) => {
           </button>
         </div>
 
-        {!success ? (
+        {!success && !showSummary ? (
           <div className="space-y-6">
             <div
               onClick={() => fileInputRef.current?.click()}
@@ -202,6 +210,45 @@ export const UploadModal = ({ onClose, onSuccess }: UploadModalProps) => {
                 className="flex-1 px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 rounded-xl font-semibold text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {uploading ? 'Uploading...' : 'Upload & Parse'}
+              </button>
+            </div>
+          </div>
+        ) : showSummary ? (
+          <div className="space-y-4">
+            <h3 className="text-xl font-bold text-white">Review before saving</h3>
+            <div className="bg-slate-800/60 border border-white/10 rounded-xl p-4 space-y-2">
+              <p className="text-slate-200"><span className="text-slate-400">Course:</span> {parsedSummary?.courseName || 'Untitled Course'}</p>
+              <p className="text-slate-200"><span className="text-slate-400">Instructor:</span> {parsedSummary?.instructor || 'Unknown'}</p>
+              <p className="text-slate-200"><span className="text-slate-400">Semester:</span> {parsedSummary?.semester || 'N/A'}</p>
+              {parsedSummary?.gradeScheme?.length > 0 && (
+                <div className="text-slate-200">
+                  <p className="text-slate-400 mb-1">Grading Scheme:</p>
+                  <ul className="space-y-1">
+                    {parsedSummary.gradeScheme.map((g: any, idx: number) => (
+                      <li key={idx} className="flex justify-between text-sm text-slate-200">
+                        <span>{g.component}</span>
+                        <span>{g.weight}%</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {parsedSummary?.needsReview && (
+                <p className="text-amber-300 text-sm">Some fields are missing. Please review after saving.</p>
+              )}
+            </div>
+            <div className="flex gap-3">
+              <button
+                onClick={() => { setShowSummary(false); setParsedSummary(null); }}
+                className="px-6 py-3 bg-white/5 hover:bg-white/10 rounded-xl font-semibold text-white transition-all"
+              >
+                Edit / Reparse
+              </button>
+              <button
+                onClick={() => { setSuccess(true); onSuccess(); }}
+                className="flex-1 py-3 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 rounded-xl font-semibold text-white transition-all"
+              >
+                Confirm & Save
               </button>
             </div>
           </div>

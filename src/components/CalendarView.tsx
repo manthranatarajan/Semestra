@@ -168,7 +168,7 @@ export const CalendarView = ({ assignments, exams, colorTheme, courseId }: Calen
         key={currentDate.toISOString()}
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
-        className="bg-white/80 dark:bg-gradient-to-br dark:from-white/5 dark:to-white/10 backdrop-blur-md rounded-2xl border border-slate-200 dark:border-white/10 p-6"
+        className="bg-slate-50/80 dark:bg-slate-800/90 rounded-2xl border border-slate-200 dark:border-slate-700 p-6"
       >
         <div className="grid grid-cols-7 gap-2 mb-4">
           {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
@@ -198,8 +198,8 @@ export const CalendarView = ({ assignments, exams, colorTheme, courseId }: Calen
                   isToday
                     ? 'bg-blue-500/20 border-2 border-blue-500'
                     : dayEvents.length > 0
-                    ? 'bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10'
-                    : 'bg-transparent hover:bg-slate-100 dark:hover:bg-white/5'
+                    ? 'bg-slate-100 dark:bg-slate-800/70 hover:bg-slate-200 dark:hover:bg-slate-700'
+                    : 'bg-transparent hover:bg-slate-100 dark:hover:bg-slate-800/60'
                 }`}
               >
                 <div className="h-full flex flex-col">
@@ -243,7 +243,7 @@ export const CalendarView = ({ assignments, exams, colorTheme, courseId }: Calen
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          className="bg-white/80 dark:bg-gradient-to-br dark:from-white/5 dark:to-white/10 backdrop-blur-md rounded-2xl border border-slate-200 dark:border-white/10 p-6"
+          className="bg-slate-50/80 dark:bg-slate-800/90 rounded-2xl border border-slate-200 dark:border-slate-700 p-6"
         >
           <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-4">Upcoming Assignments</h3>
           <div className="space-y-3">
@@ -274,7 +274,7 @@ export const CalendarView = ({ assignments, exams, colorTheme, courseId }: Calen
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
-          className="bg-white/80 dark:bg-gradient-to-br dark:from-white/5 dark:to-white/10 backdrop-blur-md rounded-2xl border border-slate-200 dark:border-white/10 p-6"
+          className="bg-slate-50/80 dark:bg-slate-800/90 rounded-2xl border border-slate-200 dark:border-slate-700 p-6"
         >
           <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-4">Upcoming Exams</h3>
           <div className="space-y-3">

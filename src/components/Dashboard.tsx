@@ -196,7 +196,7 @@ export const Dashboard = () => {
                 whileHover={{ y: -8, scale: 1.02 }}
                 className="group relative"
               >
-                <div className="relative p-6 bg-white/90 backdrop-blur-md dark:bg-gradient-to-br dark:from-white/5 dark:to-white/10 rounded-2xl border border-slate-200 dark:border-white/10 hover:border-slate-300 dark:hover:border-white/20 transition-all shadow-lg hover:shadow-2xl">
+                <div className="relative p-6 bg-white/90 backdrop-blur-md dark:bg-slate-800/90 rounded-2xl border border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-500 transition-all shadow-lg hover:shadow-2xl">
                   <div
                     className="absolute top-0 left-0 w-full h-2 rounded-t-2xl"
                     style={{ backgroundColor: course.color_theme }}
@@ -228,7 +228,7 @@ export const Dashboard = () => {
                         <span className="text-slate-600 dark:text-slate-400">Progress</span>
                         <span className="text-blue-400 font-semibold">{course.progress}%</span>
                       </div>
-                      <div className="w-full h-2 bg-slate-200 dark:bg-white/10 rounded-full overflow-hidden">
+                      <div className="w-full h-2 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
                         <motion.div
                           initial={{ width: 0 }}
                           animate={{ width: `${course.progress}%` }}

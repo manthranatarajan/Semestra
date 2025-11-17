@@ -218,14 +218,34 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const updatePreferences = async (prefs: Partial<UserPreferences>) => {
     if (!user) return;
 
-    const { error } = await supabase
+    const payload = {
+      ...prefs,
+      user_id: user.id,
+      updated_at: new Date().toISOString(),
+    };
+
+    console.log('[Profile] Saving preferences', payload);
+
+    const { data, error } = await supabase
       .from('user_preferences')
-      .update({ ...prefs, updated_at: new Date().toISOString() })
-      .eq('user_id', user.id);
+      .upsert(payload, { onConflict: 'user_id' })
+      .select()
+      .maybeSingle();
 
-    if (error) throw error;
+    if (error) {
+      console.error('Failed to update preferences', error);
+      throw error;
+    }
 
-    await fetchUserPreferences(user);
+    if (data) {
+      setUserPreferences(data);
+      if (data.theme) {
+        setThemeState(data.theme);
+        applyTheme(data.theme);
+      }
+    } else {
+      await fetchUserPreferences(user);
+    }
   };
 
   const setTheme = (newTheme: 'light' | 'dark') => {
